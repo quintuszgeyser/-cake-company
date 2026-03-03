@@ -243,7 +243,7 @@ export default function ThreeDDesignerPage() {
                         const width = getTierWidth(tierIndex);
                         const color = config.colors[tierIndex] || "#FFFFFF";
                         const bottom = Array.from({ length: tierIndex })
-                          .reduce((sum, _, i) => sum + getTierHeight(i), 0);
+                          .reduce((sum: number, _, i) => sum + getTierHeight(i), 0);
 
                         return (
                           <div
@@ -397,7 +397,7 @@ export default function ThreeDDesignerPage() {
                         style={{
                           bottom:
                             Array.from({ length: config.tiers }).reduce(
-                              (sum, _, i) => sum + getTierHeight(i),
+                              (sum: number, _, i) => sum + getTierHeight(i),
                               0
                             ) + 10,
                           transform: "translateZ(0px) translateX(-50%)",
