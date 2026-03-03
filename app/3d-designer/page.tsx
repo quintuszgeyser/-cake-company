@@ -18,10 +18,13 @@ import {
   Download,
   ShoppingCart,
   Circle,
+  Square,
+  Hexagon,
 } from "lucide-react";
 
 interface CakeConfig {
   tiers: number;
+  shapes: string[];
   colors: string[];
   decorations: string[];
   text: string;
@@ -45,6 +48,7 @@ const PRESETS = [
     name: "Classic Wedding",
     config: {
       tiers: 3,
+      shapes: ["round", "round", "round"],
       colors: ["#FFFFFF", "#FFFFFF", "#FFFFFF"],
       decorations: ["flowers", "pearls"],
       topper: "heart",
@@ -64,6 +68,7 @@ const PRESETS = [
     name: "Birthday Blast",
     config: {
       tiers: 2,
+      shapes: ["round", "round"],
       colors: ["#FF69B4", "#FFB6C1"],
       decorations: ["sprinkles", "stars"],
       topper: "star",
@@ -80,11 +85,12 @@ const PRESETS = [
     },
   },
   {
-    name: "Elegant Rose",
+    name: "Elegant Square",
     config: {
       tiers: 4,
+      shapes: ["square", "square", "square", "square"],
       colors: ["#FFF5F7", "#FFE4E9", "#FFDBE3", "#FFFFFF"],
-      decorations: ["flowers", "pearls"],
+      decorations: ["flowers", "pearls", "goldleaf"],
       topper: "flower",
       text: "",
       frostingType: "buttercream",
@@ -99,10 +105,11 @@ const PRESETS = [
     },
   },
   {
-    name: "Naked Rustic",
+    name: "Rustic Heart",
     config: {
-      tiers: 3,
-      colors: ["#F5DEB3", "#DEB887", "#D2B48C"],
+      tiers: 2,
+      shapes: ["heart", "heart"],
+      colors: ["#F5DEB3", "#DEB887"],
       decorations: ["flowers", "berries"],
       topper: "flower",
       text: "",
@@ -135,6 +142,15 @@ const COLORS = [
   { name: "Gold", value: "#FFD700" },
   { name: "Silver", value: "#C0C0C0" },
   { name: "Chocolate", value: "#8B4513" },
+];
+
+const SHAPES = [
+  { name: "Round", value: "round", icon: Circle },
+  { name: "Square", value: "square", icon: Square },
+  { name: "Rectangle", value: "rectangle", icon: Square },
+  { name: "Heart", value: "heart", icon: Heart },
+  { name: "Hexagon", value: "hexagon", icon: Hexagon },
+  { name: "Petal", value: "petal", icon: Flower2 },
 ];
 
 const DECORATIONS = [
@@ -198,6 +214,7 @@ const STYLES = [
 export default function ThreeDDesignerPage() {
   const [config, setConfig] = useState<CakeConfig>({
     tiers: 3,
+    shapes: ["round", "round", "round"],
     colors: ["#FFFFFF", "#FFFFFF", "#FFFFFF"],
     decorations: ["flowers"],
     text: "",
@@ -227,13 +244,22 @@ export default function ThreeDDesignerPage() {
     const newColors = Array(newTiers)
       .fill("#FFFFFF")
       .map((_, i) => config.colors[i] || "#FFFFFF");
-    updateConfig({ tiers: newTiers, colors: newColors });
+    const newShapes = Array(newTiers)
+      .fill("round")
+      .map((_, i) => config.shapes[i] || "round");
+    updateConfig({ tiers: newTiers, colors: newColors, shapes: newShapes });
   };
 
   const updateTierColor = (tierIndex: number, color: string) => {
     const newColors = [...config.colors];
     newColors[tierIndex] = color;
     updateConfig({ colors: newColors });
+  };
+
+  const updateTierShape = (tierIndex: number, shape: string) => {
+    const newShapes = [...config.shapes];
+    newShapes[tierIndex] = shape;
+    updateConfig({ shapes: newShapes });
   };
 
   const toggleDecoration = (decoration: string) => {
@@ -269,46 +295,358 @@ export default function ThreeDDesignerPage() {
     setIsDragging(false);
   };
 
-  const getTierHeight = (tierIndex: number) => {
-    return 80 + tierIndex * 20;
+  // Dynamic scaling based on number of tiers
+  const getBaseScale = () => {
+    if (config.tiers <= 2) return 1;
+    if (config.tiers === 3) return 0.85;
+    if (config.tiers === 4) return 0.7;
+    return 0.6;
   };
 
-  const getTierWidth = (tierIndex: number) => {
-    return 240 - tierIndex * 40;
+  const getTierHeight = (tierIndex: number) => {
+    return 70 + tierIndex * 15;
+  };
+
+  const getTierWidth = (tierIndex: number, shape: string) => {
+    const baseWidth = 200 - tierIndex * 35;
+    if (shape === "rectangle") return baseWidth * 1.3;
+    if (shape === "petal") return baseWidth * 0.9;
+    return baseWidth;
+  };
+
+  const getShapeClipPath = (shape: string) => {
+    switch (shape) {
+      case "round":
+        return "none";
+      case "square":
+        return "none";
+      case "rectangle":
+        return "none";
+      case "heart":
+        return "polygon(50% 15%, 61% 6%, 75% 0%, 85% 5%, 93% 15%, 98% 30%, 95% 45%, 85% 60%, 50% 100%, 15% 60%, 5% 45%, 2% 30%, 7% 15%, 15% 5%, 25% 0%, 39% 6%)";
+      case "hexagon":
+        return "polygon(25% 0%, 75% 0%, 100% 50%, 75% 100%, 25% 100%, 0% 50%)";
+      case "petal":
+        return "polygon(50% 0%, 61% 35%, 98% 35%, 68% 57%, 79% 91%, 50% 70%, 21% 91%, 32% 57%, 2% 35%, 39% 35%)";
+      default:
+        return "none";
+    }
   };
 
   const getTextureStyle = (texture: string, color: string) => {
-    const baseGradient = `linear-gradient(to bottom, rgba(255,255,255,0.3), rgba(0,0,0,0.1))`;
+    const baseGradient = `linear-gradient(135deg, rgba(255,255,255,0.4) 0%, rgba(255,255,255,0.1) 25%, rgba(0,0,0,0.05) 50%, rgba(255,255,255,0.1) 75%, rgba(255,255,255,0.3) 100%)`;
 
     switch (texture) {
       case "smooth":
         return baseGradient;
       case "rustic":
-        return `${baseGradient}, repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0,0,0,0.05) 2px, rgba(0,0,0,0.05) 4px)`;
+        return `${baseGradient}, repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0,0,0,0.04) 2px, rgba(0,0,0,0.04) 4px), repeating-linear-gradient(90deg, transparent, transparent 3px, rgba(0,0,0,0.02) 3px, rgba(0,0,0,0.02) 6px)`;
       case "textured":
         return `${baseGradient}, repeating-linear-gradient(45deg, transparent, transparent 3px, rgba(0,0,0,0.03) 3px, rgba(0,0,0,0.03) 6px)`;
       case "basketweave":
-        return `${baseGradient}, repeating-linear-gradient(0deg, rgba(0,0,0,0.05) 0px, rgba(0,0,0,0.05) 10px, transparent 10px, transparent 20px), repeating-linear-gradient(90deg, rgba(0,0,0,0.05) 0px, rgba(0,0,0,0.05) 10px, transparent 10px, transparent 20px)`;
+        return `${baseGradient}, repeating-linear-gradient(0deg, rgba(0,0,0,0.06) 0px, rgba(0,0,0,0.06) 8px, transparent 8px, transparent 16px), repeating-linear-gradient(90deg, rgba(0,0,0,0.06) 0px, rgba(0,0,0,0.06) 8px, transparent 8px, transparent 16px)`;
       case "quilted":
-        return `${baseGradient}, repeating-linear-gradient(45deg, transparent, transparent 20px, rgba(0,0,0,0.05) 20px, rgba(0,0,0,0.05) 21px), repeating-linear-gradient(-45deg, transparent, transparent 20px, rgba(0,0,0,0.05) 20px, rgba(0,0,0,0.05) 21px)`;
+        return `${baseGradient}, repeating-linear-gradient(45deg, transparent, transparent 15px, rgba(0,0,0,0.05) 15px, rgba(0,0,0,0.05) 16px), repeating-linear-gradient(-45deg, transparent, transparent 15px, rgba(0,0,0,0.05) 15px, rgba(0,0,0,0.05) 16px)`;
       case "ruffled":
-        return `${baseGradient}, repeating-linear-gradient(0deg, transparent, transparent 5px, rgba(255,255,255,0.3) 5px, rgba(255,255,255,0.3) 10px)`;
+        return `${baseGradient}, repeating-linear-gradient(0deg, transparent, transparent 4px, rgba(255,255,255,0.4) 4px, rgba(255,255,255,0.4) 8px)`;
       case "combed":
-        return `${baseGradient}, repeating-linear-gradient(0deg, transparent, transparent 3px, rgba(0,0,0,0.08) 3px, rgba(0,0,0,0.08) 4px)`;
+        return `${baseGradient}, repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0,0,0,0.08) 2px, rgba(0,0,0,0.08) 3px)`;
       case "petal":
-        return `${baseGradient}, radial-gradient(ellipse at top, rgba(255,255,255,0.4), transparent)`;
+        return `${baseGradient}, radial-gradient(ellipse at top, rgba(255,255,255,0.5), transparent 60%)`;
       default:
         return baseGradient;
     }
   };
 
-  const getColorEffect = (baseColor: string, technique: string, tierIndex: number, totalTiers: number) => {
-    if (technique === "ombre") {
-      // Lighten color based on tier position
-      const lightness = 100 - (tierIndex / totalTiers) * 30;
-      return baseColor;
+  const renderDecorations = (tierIndex: number, side: string, width: number, height: number) => {
+    const decorationElements = [];
+
+    // Flowers
+    if (config.decorations.includes("flowers")) {
+      const flowerCount = side === "top" ? 4 : 3;
+      decorationElements.push(
+        <div key={`flowers-${side}`} className="absolute inset-0 pointer-events-none">
+          {Array.from({ length: flowerCount }).map((_, i) => (
+            <Flower2
+              key={i}
+              className="absolute h-5 w-5 text-pink-400 drop-shadow-lg"
+              style={{
+                left: `${15 + (i * 70) / flowerCount}%`,
+                top: side === "top" ? `${20 + (i % 2) * 30}%` : "15%",
+                transform: side === "top" ? "rotate(-20deg)" : "none",
+              }}
+            />
+          ))}
+        </div>
+      );
     }
-    return baseColor;
+
+    // Berries
+    if (config.decorations.includes("berries")) {
+      decorationElements.push(
+        <div key={`berries-${side}`} className="absolute inset-0 pointer-events-none">
+          {Array.from({ length: 5 }).map((_, i) => (
+            <div
+              key={i}
+              className="absolute w-3 h-3 rounded-full bg-gradient-to-br from-red-400 to-red-600 shadow-lg"
+              style={{
+                left: `${10 + (i * 80) / 5}%`,
+                top: side === "top" ? `${30 + (i % 3) * 20}%` : "20%",
+              }}
+            />
+          ))}
+        </div>
+      );
+    }
+
+    // Macarons
+    if (config.decorations.includes("macarons") && tierIndex === 0) {
+      decorationElements.push(
+        <div key={`macarons-${side}`} className="absolute inset-x-0 top-2 flex justify-around px-3 pointer-events-none">
+          {Array.from({ length: 3 }).map((_, i) => (
+            <div
+              key={i}
+              className="w-5 h-5 rounded-full shadow-xl"
+              style={{
+                backgroundColor: ["#FFB6C1", "#87CEEB", "#E6E6FA"][i],
+                border: "2px solid rgba(255,255,255,0.6)",
+                boxShadow: "0 4px 6px rgba(0,0,0,0.2), inset 0 -2px 4px rgba(0,0,0,0.1)",
+              }}
+            />
+          ))}
+        </div>
+      );
+    }
+
+    // Stars
+    if (config.decorations.includes("stars")) {
+      decorationElements.push(
+        <div key={`stars-${side}`} className="absolute inset-0 pointer-events-none">
+          {Array.from({ length: 4 }).map((_, i) => (
+            <Star
+              key={i}
+              className="absolute h-4 w-4 text-yellow-400 fill-yellow-400 drop-shadow-lg"
+              style={{
+                left: `${20 + (i * 60) / 4}%`,
+                top: `${25 + (i % 2) * 40}%`,
+              }}
+            />
+          ))}
+        </div>
+      );
+    }
+
+    // Hearts
+    if (config.decorations.includes("hearts")) {
+      decorationElements.push(
+        <div key={`hearts-${side}`} className="absolute inset-0 pointer-events-none">
+          {Array.from({ length: 3 }).map((_, i) => (
+            <Heart
+              key={i}
+              className="absolute h-4 w-4 text-red-400 fill-red-400 drop-shadow-md"
+              style={{
+                left: `${25 + (i * 50) / 3}%`,
+                bottom: "15%",
+              }}
+            />
+          ))}
+        </div>
+      );
+    }
+
+    // Sprinkles
+    if (config.decorations.includes("sprinkles")) {
+      decorationElements.push(
+        <div key={`sprinkles-${side}`} className="absolute inset-0 pointer-events-none overflow-hidden">
+          {Array.from({ length: 35 }).map((_, i) => (
+            <div
+              key={i}
+              className="absolute w-1 h-2 rounded-full"
+              style={{
+                backgroundColor: ["#FF69B4", "#87CEEB", "#FFD700", "#98FF98", "#E6E6FA"][i % 5],
+                left: `${(i * 17) % 95}%`,
+                top: `${(i * 23) % 95}%`,
+                transform: `rotate(${(i * 37) % 360}deg)`,
+                boxShadow: "0 1px 2px rgba(0,0,0,0.2)",
+              }}
+            />
+          ))}
+        </div>
+      );
+    }
+
+    // Pearls
+    if (config.decorations.includes("pearls")) {
+      decorationElements.push(
+        <div key={`pearls-${side}`} className="absolute inset-x-0 bottom-2 flex justify-around px-2 pointer-events-none">
+          {Array.from({ length: 12 }).map((_, i) => (
+            <div
+              key={i}
+              className="w-2 h-2 rounded-full bg-white shadow-md"
+              style={{
+                boxShadow: "0 2px 4px rgba(0,0,0,0.2), inset 0 1px 2px rgba(255,255,255,0.8)",
+              }}
+            />
+          ))}
+        </div>
+      );
+    }
+
+    // Gold Leaf
+    if (config.decorations.includes("goldleaf")) {
+      decorationElements.push(
+        <div key={`goldleaf-${side}`} className="absolute inset-0 pointer-events-none overflow-hidden">
+          {Array.from({ length: 6 }).map((_, i) => (
+            <div
+              key={i}
+              className="absolute opacity-80"
+              style={{
+                width: 12 + Math.random() * 10,
+                height: 12 + Math.random() * 10,
+                background: "linear-gradient(135deg, #FFD700 0%, #FFA500 50%, #FFD700 100%)",
+                left: `${(i * 19) % 85 + 5}%`,
+                top: `${(i * 29) % 75 + 10}%`,
+                clipPath: "polygon(30% 0%, 70% 0%, 100% 30%, 100% 70%, 70% 100%, 30% 100%, 0% 70%, 0% 30%)",
+                filter: "drop-shadow(0 2px 3px rgba(0,0,0,0.3))",
+                transform: `rotate(${(i * 47) % 360}deg)`,
+              }}
+            />
+          ))}
+        </div>
+      );
+    }
+
+    return decorationElements;
+  };
+
+  const renderPipingPattern = (pattern: string, color: string, side: string) => {
+    if (pattern === "none") return null;
+
+    const pipingColor = color === "#FFFFFF" || color === "#F7E7CE" ? "#FFB6C1" : "#FFFFFF";
+
+    switch (pattern) {
+      case "rosettes":
+        return (
+          <div className="absolute inset-x-0 top-2 flex justify-around px-3">
+            {Array.from({ length: 5 }).map((_, i) => (
+              <div
+                key={i}
+                className="w-4 h-4 rounded-full border-2 relative"
+                style={{
+                  borderColor: pipingColor,
+                  background: `radial-gradient(circle at 30% 30%, ${pipingColor}, transparent)`,
+                  boxShadow: `inset 0 0 3px ${pipingColor}`,
+                }}
+              >
+                <div
+                  className="absolute inset-1 rounded-full border"
+                  style={{ borderColor: pipingColor, opacity: 0.5 }}
+                />
+              </div>
+            ))}
+          </div>
+        );
+
+      case "shells":
+        return (
+          <div className="absolute inset-x-0 bottom-1 flex">
+            {Array.from({ length: 15 }).map((_, i) => (
+              <div
+                key={i}
+                className="flex-1 h-3"
+                style={{
+                  background: `linear-gradient(to top, ${pipingColor}, transparent)`,
+                  clipPath: "polygon(0% 100%, 50% 0%, 100% 100%)",
+                  opacity: 0.7,
+                }}
+              />
+            ))}
+          </div>
+        );
+
+      case "pearls":
+        return (
+          <div className="absolute inset-x-0 bottom-2 flex justify-around px-2">
+            {Array.from({ length: 10 }).map((_, i) => (
+              <div
+                key={i}
+                className="w-2 h-2 rounded-full"
+                style={{
+                  backgroundColor: pipingColor,
+                  boxShadow: `0 2px 3px rgba(0,0,0,0.2), inset 0 1px 1px rgba(255,255,255,0.5)`,
+                }}
+              />
+            ))}
+          </div>
+        );
+
+      case "dots":
+        return (
+          <div className="absolute inset-0 p-2">
+            {Array.from({ length: 25 }).map((_, i) => (
+              <div
+                key={i}
+                className="absolute w-1.5 h-1.5 rounded-full"
+                style={{
+                  backgroundColor: pipingColor,
+                  left: `${(i * 17) % 90 + 5}%`,
+                  top: `${(i * 23) % 90 + 5}%`,
+                  boxShadow: "0 1px 2px rgba(0,0,0,0.2)",
+                }}
+              />
+            ))}
+          </div>
+        );
+
+      case "rope":
+        return (
+          <div className="absolute inset-x-0 bottom-1 flex items-center">
+            <div
+              className="w-full h-3"
+              style={{
+                background: `repeating-linear-gradient(90deg, ${pipingColor} 0px, ${pipingColor} 8px, transparent 8px, transparent 12px)`,
+                opacity: 0.8,
+              }}
+            />
+          </div>
+        );
+
+      case "ruffles":
+        return (
+          <div className="absolute inset-x-0 bottom-0 h-8 overflow-hidden">
+            {Array.from({ length: 20 }).map((_, i) => (
+              <div
+                key={i}
+                className="absolute h-full"
+                style={{
+                  width: "6%",
+                  left: `${i * 5}%`,
+                  background: `linear-gradient(to right, transparent, ${pipingColor}, transparent)`,
+                  opacity: 0.6,
+                  transform: `skewX(${10 - (i % 2) * 20}deg)`,
+                }}
+              />
+            ))}
+          </div>
+        );
+
+      case "lace":
+        return (
+          <div className="absolute inset-0 opacity-50">
+            <svg className="w-full h-full" style={{ fill: "none", stroke: pipingColor, strokeWidth: 1 }}>
+              {Array.from({ length: 10 }).map((_, i) => (
+                <path
+                  key={i}
+                  d={`M ${i * 10} 10 Q ${i * 10 + 5} 5, ${i * 10 + 10} 10 T ${i * 10 + 20} 10`}
+                />
+              ))}
+            </svg>
+          </div>
+        );
+
+      default:
+        return null;
+    }
   };
 
   return (
@@ -331,7 +669,7 @@ export default function ThreeDDesignerPage() {
           {/* Sticky 3D Cake Viewer */}
           <div className="lg:col-span-7">
             <div className="lg:sticky lg:top-6">
-              <Card className="overflow-hidden shadow-xl">
+              <Card className="overflow-hidden shadow-2xl">
                 <CardContent className="p-0">
                   {/* Viewer Controls */}
                   <div className="bg-gradient-to-r from-pink-100 to-purple-100 border-b p-3 flex items-center justify-between">
@@ -339,7 +677,7 @@ export default function ThreeDDesignerPage() {
                       <Button
                         size="sm"
                         variant="outline"
-                        onClick={() => updateConfig({ zoom: config.zoom + 0.1 })}
+                        onClick={() => updateConfig({ zoom: Math.min(1.5, config.zoom + 0.1) })}
                       >
                         <ZoomIn className="h-4 w-4" />
                       </Button>
@@ -362,12 +700,12 @@ export default function ThreeDDesignerPage() {
                     </div>
                     <div className="flex items-center gap-2">
                       <p className="text-sm text-muted-foreground hidden md:block">
-                        Drag to rotate • Zoom to scale
+                        Drag to rotate
                       </p>
                       <div className="flex gap-1">
                         {config.metallic && (
                           <span className="text-xs bg-yellow-100 text-yellow-800 px-2 py-1 rounded">
-                            Gold Accents
+                            Gold
                           </span>
                         )}
                         {config.glitter && (
@@ -387,45 +725,62 @@ export default function ThreeDDesignerPage() {
                     onMouseUp={handleMouseUp}
                     onMouseLeave={handleMouseUp}
                   >
+                    {/* Soft shadows on ground */}
+                    <div
+                      className="absolute bottom-0"
+                      style={{
+                        width: "60%",
+                        height: "20%",
+                        background: "radial-gradient(ellipse at center, rgba(0,0,0,0.15), transparent 70%)",
+                        filter: "blur(20px)",
+                      }}
+                    />
+
                     {/* Cake Container */}
                     <div
                       className="relative transition-transform duration-100"
                       style={{
-                        transform: `perspective(1200px) rotateX(-10deg) rotateY(${config.rotation}deg) scale(${config.zoom})`,
+                        transform: `perspective(1500px) rotateX(-12deg) rotateY(${config.rotation}deg) scale(${config.zoom * getBaseScale()})`,
                         transformStyle: "preserve-3d",
                       }}
                     >
                       {/* Cake Base/Plate */}
                       <div
-                        className="absolute bottom-0 left-1/2 -translate-x-1/2 rounded-full bg-gradient-to-b from-gray-200 to-gray-300 shadow-2xl"
+                        className="absolute bottom-0 left-1/2 -translate-x-1/2 rounded-full"
                         style={{
-                          width: getTierWidth(0) + 60,
-                          height: 20,
-                          transform: "translateZ(-10px)",
+                          width: getTierWidth(0, config.shapes[0]) + 80,
+                          height: 25,
+                          background: "linear-gradient(to bottom, #e5e7eb 0%, #d1d5db 50%, #9ca3af 100%)",
+                          transform: "translateZ(-12px)",
+                          boxShadow: "0 10px 30px rgba(0,0,0,0.3), inset 0 -2px 10px rgba(0,0,0,0.2)",
+                          border: "3px solid #b0b5ba",
                         }}
                       />
 
-                      {/* Drip Effect Base */}
+                      {/* Drip Effects */}
                       {config.dripEffect && (
                         <div className="absolute left-1/2 -translate-x-1/2 bottom-0">
-                          {Array.from({ length: 8 }).map((_, i) => {
-                            const angle = (i / 8) * 360;
-                            const radius = getTierWidth(0) / 2;
+                          {Array.from({ length: 16 }).map((_, i) => {
+                            const angle = (i / 16) * 360;
+                            const radius = getTierWidth(0, config.shapes[0]) / 2 - 5;
                             const x = Math.cos((angle * Math.PI) / 180) * radius;
                             const z = Math.sin((angle * Math.PI) / 180) * radius;
-                            const dripLength = 30 + Math.random() * 20;
+                            const dripLength = 25 + Math.random() * 25;
+                            const dripWidth = 6 + Math.random() * 4;
 
                             return (
                               <div
                                 key={i}
-                                className="absolute rounded-full shadow-lg"
+                                className="absolute rounded-full"
                                 style={{
-                                  width: 8 + Math.random() * 6,
+                                  width: dripWidth,
                                   height: dripLength,
-                                  backgroundColor: config.dripColor,
+                                  background: `linear-gradient(to bottom, ${config.dripColor}, ${config.dripColor}dd)`,
                                   left: x,
                                   transform: `translateZ(${z}px) translateY(-${dripLength}px)`,
                                   transformOrigin: "top center",
+                                  boxShadow: "0 2px 4px rgba(0,0,0,0.3)",
+                                  borderRadius: "50% 50% 50% 50% / 20% 20% 80% 80%",
                                 }}
                               />
                             );
@@ -439,20 +794,17 @@ export default function ThreeDDesignerPage() {
                         .map((_, index) => {
                           const tierIndex = config.tiers - 1 - index;
                           const height = getTierHeight(tierIndex);
-                          const width = getTierWidth(tierIndex);
-                          const color = getColorEffect(
-                            config.colors[tierIndex] || "#FFFFFF",
-                            config.colorTechnique,
-                            tierIndex,
-                            config.tiers
-                          );
+                          const shape = config.shapes[tierIndex] || "round";
+                          const width = getTierWidth(tierIndex, shape);
+                          const color = config.colors[tierIndex] || "#FFFFFF";
                           const bottom = Array.from({ length: tierIndex }).reduce(
                             (sum: number, _, i) => sum + getTierHeight(i),
                             0
                           );
 
                           const isNaked = config.style === "naked" || config.style === "seminaked";
-                          const opacity = config.style === "seminaked" ? 0.7 : 1;
+                          const opacity = config.style === "seminaked" ? 0.75 : 1;
+                          const isRound = shape === "round" || shape === "petal";
 
                           return (
                             <div
@@ -465,302 +817,153 @@ export default function ThreeDDesignerPage() {
                                 transformStyle: "preserve-3d",
                               }}
                             >
-                              {/* Fault Line Effect */}
-                              {config.style === "faultline" && tierIndex === 1 && (
-                                <div
-                                  className="absolute left-0 right-0 h-8 z-10"
-                                  style={{
-                                    top: "40%",
-                                    transform: `translateZ(${width / 2 + 1}px)`,
-                                  }}
-                                >
-                                  <div className="h-full bg-gradient-to-r from-pink-400 via-yellow-400 to-pink-400 flex items-center justify-center gap-1">
-                                    {config.decorations.includes("sprinkles") &&
-                                      Array.from({ length: 15 }).map((_, i) => (
-                                        <div
-                                          key={i}
-                                          className="w-1 h-1 rounded-full"
-                                          style={{
-                                            backgroundColor: ["#FF69B4", "#FFD700", "#87CEEB"][i % 3],
-                                          }}
-                                        />
-                                      ))}
-                                  </div>
-                                </div>
-                              )}
-
                               {/* Front Face */}
                               <div
-                                className="absolute inset-0 rounded-lg shadow-lg border-2 border-white/50"
+                                className={`absolute inset-0 shadow-2xl border-2 ${isRound ? "rounded-full" : "rounded-lg"}`}
                                 style={{
                                   backgroundColor: color,
                                   opacity: isNaked ? opacity : 1,
                                   transform: `translateZ(${width / 2}px)`,
                                   backgroundImage: getTextureStyle(config.texture, color),
+                                  borderColor: "rgba(255,255,255,0.3)",
+                                  clipPath: isRound ? "none" : getShapeClipPath(shape),
+                                  boxShadow: "0 8px 20px rgba(0,0,0,0.25), inset 0 2px 4px rgba(255,255,255,0.3), inset 0 -2px 4px rgba(0,0,0,0.1)",
                                 }}
                               >
-                                {/* Metallic Accents */}
                                 {config.metallic && (
                                   <div
                                     className="absolute inset-0 opacity-20 pointer-events-none"
                                     style={{
                                       background:
-                                        "linear-gradient(135deg, transparent 0%, rgba(255,215,0,0.6) 50%, transparent 100%)",
+                                        "linear-gradient(135deg, transparent 0%, rgba(255,215,0,0.6) 30%, transparent 50%, rgba(255,215,0,0.4) 70%, transparent 100%)",
                                     }}
                                   />
                                 )}
 
-                                {/* Glitter Effect */}
                                 {config.glitter && (
-                                  <div className="absolute inset-0">
-                                    {Array.from({ length: 30 }).map((_, i) => (
-                                      <div
-                                        key={i}
-                                        className="absolute w-1 h-1 bg-white rounded-full opacity-70"
-                                        style={{
-                                          left: `${(i * 17) % 95}%`,
-                                          top: `${(i * 23) % 95}%`,
-                                          boxShadow: "0 0 3px rgba(255,255,255,0.8)",
-                                        }}
-                                      />
-                                    ))}
-                                  </div>
-                                )}
-
-                                {/* Piping Patterns */}
-                                {config.pipingPattern === "rosettes" && (
-                                  <div className="absolute inset-x-0 top-2 flex justify-around px-2">
-                                    {Array.from({ length: 4 }).map((_, i) => (
-                                      <div
-                                        key={i}
-                                        className="w-4 h-4 rounded-full border-2"
-                                        style={{
-                                          borderColor: color === "#FFFFFF" ? "#FFB6C1" : "#FFFFFF",
-                                          background: `radial-gradient(circle, ${color === "#FFFFFF" ? "#FFB6C1" : "#FFFFFF"}, transparent)`,
-                                        }}
-                                      />
-                                    ))}
-                                  </div>
-                                )}
-
-                                {config.pipingPattern === "shells" && (
-                                  <div className="absolute inset-x-0 bottom-1 flex">
-                                    {Array.from({ length: 12 }).map((_, i) => (
-                                      <div
-                                        key={i}
-                                        className="flex-1 h-2 border-t-2 rounded-t-full"
-                                        style={{
-                                          borderColor: color === "#FFFFFF" ? "#FFB6C1" : "#FFFFFF",
-                                        }}
-                                      />
-                                    ))}
-                                  </div>
-                                )}
-
-                                {config.pipingPattern === "pearls" && (
-                                  <div className="absolute inset-x-0 bottom-2 flex justify-around px-2">
-                                    {Array.from({ length: 8 }).map((_, i) => (
-                                      <div
-                                        key={i}
-                                        className="w-2 h-2 rounded-full bg-white shadow-sm"
-                                      />
-                                    ))}
-                                  </div>
-                                )}
-
-                                {config.pipingPattern === "dots" && (
-                                  <div className="absolute inset-0 p-2">
-                                    {Array.from({ length: 20 }).map((_, i) => (
-                                      <div
-                                        key={i}
-                                        className="absolute w-1.5 h-1.5 rounded-full"
-                                        style={{
-                                          backgroundColor: color === "#FFFFFF" ? "#FFB6C1" : "#FFFFFF",
-                                          left: `${(i * 19) % 85 + 5}%`,
-                                          top: `${(i * 31) % 85 + 5}%`,
-                                        }}
-                                      />
-                                    ))}
-                                  </div>
-                                )}
-
-                                {config.pipingPattern === "lace" && (
-                                  <div className="absolute inset-0 opacity-60">
-                                    <svg className="w-full h-full" style={{ fill: "none", stroke: color === "#FFFFFF" ? "#FFB6C1" : "#FFFFFF", strokeWidth: 0.5 }}>
-                                      {Array.from({ length: 5 }).map((_, i) => (
-                                        <path
-                                          key={i}
-                                          d={`M ${i * 20} 10 Q ${i * 20 + 10} 5, ${i * 20 + 20} 10 Q ${i * 20 + 30} 15, ${i * 20 + 40} 10`}
-                                        />
-                                      ))}
-                                    </svg>
-                                  </div>
-                                )}
-
-                                {/* Decorations */}
-                                {config.decorations.includes("flowers") && (
-                                  <div className="absolute inset-x-0 top-2 flex justify-around px-4">
-                                    {Array.from({ length: 3 }).map((_, i) => (
-                                      <Flower2
-                                        key={i}
-                                        className="h-5 w-5 text-pink-400 drop-shadow-md"
-                                      />
-                                    ))}
-                                  </div>
-                                )}
-
-                                {config.decorations.includes("berries") && (
-                                  <div className="absolute inset-x-0 top-3 flex justify-around px-4">
-                                    {Array.from({ length: 5 }).map((_, i) => (
-                                      <div
-                                        key={i}
-                                        className="w-3 h-3 rounded-full bg-red-500 shadow-md"
-                                      />
-                                    ))}
-                                  </div>
-                                )}
-
-                                {config.decorations.includes("macarons") && tierIndex === 0 && (
-                                  <div className="absolute inset-x-0 top-2 flex justify-around px-2">
-                                    {Array.from({ length: 3 }).map((_, i) => (
-                                      <div
-                                        key={i}
-                                        className="w-4 h-4 rounded-full shadow-lg"
-                                        style={{
-                                          backgroundColor: ["#FFB6C1", "#87CEEB", "#E6E6FA"][i],
-                                          border: "2px solid rgba(255,255,255,0.5)",
-                                        }}
-                                      />
-                                    ))}
-                                  </div>
-                                )}
-
-                                {config.decorations.includes("hearts") && (
-                                  <div className="absolute inset-x-0 bottom-3 flex justify-around px-4">
-                                    {Array.from({ length: 3 }).map((_, i) => (
-                                      <Heart
-                                        key={i}
-                                        className="h-3 w-3 text-red-400 fill-red-400"
-                                      />
-                                    ))}
-                                  </div>
-                                )}
-
-                                {config.decorations.includes("stars") && tierIndex === 0 && (
-                                  <div className="absolute inset-0 flex items-center justify-center">
-                                    <Star className="h-6 w-6 text-yellow-400 fill-yellow-400 drop-shadow-lg" />
-                                  </div>
-                                )}
-
-                                {config.decorations.includes("sprinkles") && (
-                                  <div className="absolute inset-0">
-                                    {Array.from({ length: 30 }).map((_, i) => (
-                                      <div
-                                        key={i}
-                                        className="absolute w-1 h-2 rounded-full"
-                                        style={{
-                                          backgroundColor: [
-                                            "#FF69B4",
-                                            "#87CEEB",
-                                            "#FFD700",
-                                            "#98FF98",
-                                          ][i % 4],
-                                          left: `${(i * 17) % 90}%`,
-                                          top: `${(i * 23) % 90}%`,
-                                        }}
-                                      />
-                                    ))}
-                                  </div>
-                                )}
-
-                                {config.decorations.includes("pearls") && (
-                                  <div className="absolute inset-x-0 bottom-2 flex justify-around px-2">
-                                    {Array.from({ length: 10 }).map((_, i) => (
-                                      <div
-                                        key={i}
-                                        className="w-2 h-2 rounded-full bg-white shadow-md"
-                                      />
-                                    ))}
-                                  </div>
-                                )}
-
-                                {config.decorations.includes("goldleaf") && (
                                   <div className="absolute inset-0 pointer-events-none">
-                                    {Array.from({ length: 5 }).map((_, i) => (
+                                    {Array.from({ length: 50 }).map((_, i) => (
                                       <div
                                         key={i}
-                                        className="absolute opacity-70"
+                                        className="absolute w-1 h-1 bg-white rounded-full"
                                         style={{
-                                          width: 15 + Math.random() * 10,
-                                          height: 15 + Math.random() * 10,
-                                          backgroundColor: "#FFD700",
-                                          left: `${(i * 23) % 80 + 10}%`,
-                                          top: `${(i * 37) % 70 + 15}%`,
-                                          clipPath: "polygon(30% 0%, 70% 0%, 100% 30%, 100% 70%, 70% 100%, 30% 100%, 0% 70%, 0% 30%)",
-                                          filter: "blur(0.5px)",
+                                          left: `${(i * 13) % 98}%`,
+                                          top: `${(i * 17) % 98}%`,
+                                          opacity: 0.6 + (Math.random() * 0.4),
+                                          boxShadow: "0 0 3px rgba(255,255,255,0.9)",
                                         }}
                                       />
                                     ))}
                                   </div>
                                 )}
+
+                                {renderPipingPattern(config.pipingPattern, color, "front")}
+                                {renderDecorations(tierIndex, "front", width, height)}
                               </div>
 
                               {/* Back Face */}
                               <div
-                                className="absolute inset-0 rounded-lg shadow-lg border-2 border-white/50"
+                                className={`absolute inset-0 shadow-2xl border-2 ${isRound ? "rounded-full" : "rounded-lg"}`}
                                 style={{
                                   backgroundColor: color,
                                   opacity: isNaked ? opacity : 1,
                                   transform: `translateZ(-${width / 2}px) rotateY(180deg)`,
                                   backgroundImage: getTextureStyle(config.texture, color),
+                                  borderColor: "rgba(255,255,255,0.2)",
+                                  clipPath: isRound ? "none" : getShapeClipPath(shape),
+                                  boxShadow: "0 8px 20px rgba(0,0,0,0.3), inset 0 2px 4px rgba(255,255,255,0.2)",
                                 }}
-                              />
+                              >
+                                {renderPipingPattern(config.pipingPattern, color, "back")}
+                                {renderDecorations(tierIndex, "back", width, height)}
+                              </div>
 
                               {/* Left Face */}
                               <div
-                                className="absolute inset-y-0 left-0 shadow-lg border-2 border-white/50"
+                                className="absolute inset-y-0 left-0 shadow-2xl border-2"
                                 style={{
                                   width: width,
                                   backgroundColor: color,
                                   opacity: isNaked ? opacity : 1,
                                   transform: `rotateY(-90deg) translateZ(${width / 2}px)`,
-                                  backgroundImage: `linear-gradient(to bottom, rgba(255,255,255,0.1), rgba(0,0,0,0.2))`,
+                                  backgroundImage: `linear-gradient(to bottom, rgba(255,255,255,0.15) 0%, rgba(0,0,0,0.1) 50%, rgba(0,0,0,0.2) 100%)`,
+                                  borderColor: "rgba(255,255,255,0.2)",
+                                  boxShadow: "0 8px 20px rgba(0,0,0,0.3)",
                                 }}
-                              />
+                              >
+                                {renderPipingPattern(config.pipingPattern, color, "left")}
+                                {renderDecorations(tierIndex, "left", width, height)}
+                              </div>
 
                               {/* Right Face */}
                               <div
-                                className="absolute inset-y-0 right-0 shadow-lg border-2 border-white/50"
+                                className="absolute inset-y-0 right-0 shadow-2xl border-2"
                                 style={{
                                   width: width,
                                   backgroundColor: color,
                                   opacity: isNaked ? opacity : 1,
                                   transform: `rotateY(90deg) translateZ(${width / 2}px)`,
-                                  backgroundImage: `linear-gradient(to bottom, rgba(255,255,255,0.1), rgba(0,0,0,0.2))`,
+                                  backgroundImage: `linear-gradient(to bottom, rgba(255,255,255,0.15) 0%, rgba(0,0,0,0.1) 50%, rgba(0,0,0,0.2) 100%)`,
+                                  borderColor: "rgba(255,255,255,0.2)",
+                                  boxShadow: "0 8px 20px rgba(0,0,0,0.3)",
                                 }}
-                              />
+                              >
+                                {renderPipingPattern(config.pipingPattern, color, "right")}
+                                {renderDecorations(tierIndex, "right", width, height)}
+                              </div>
 
                               {/* Top Face */}
                               <div
-                                className="absolute inset-x-0 top-0 rounded-lg shadow-inner border-2 border-white/30"
+                                className={`absolute inset-x-0 top-0 shadow-inner border-2 ${isRound ? "rounded-full" : "rounded-lg"}`}
                                 style={{
                                   height: width,
                                   backgroundColor: color,
                                   opacity: isNaked ? opacity : 1,
                                   transform: `rotateX(90deg) translateZ(0px)`,
-                                  backgroundImage: `linear-gradient(135deg, rgba(255,255,255,0.4), rgba(0,0,0,0.1))`,
+                                  backgroundImage: `linear-gradient(135deg, rgba(255,255,255,0.5) 0%, rgba(255,255,255,0.2) 30%, rgba(0,0,0,0.05) 60%, rgba(255,255,255,0.2) 100%)`,
+                                  borderColor: "rgba(255,255,255,0.3)",
+                                  clipPath: isRound ? "none" : getShapeClipPath(shape),
+                                  boxShadow: "inset 0 2px 8px rgba(0,0,0,0.1)",
                                 }}
-                              />
+                              >
+                                {renderDecorations(tierIndex, "top", width, height)}
+                              </div>
 
                               {/* Ribbon */}
                               {config.decorations.includes("ribbon") && (
                                 <div
-                                  className="absolute left-0 right-0 h-6 bg-gradient-to-r from-pink-400 via-pink-500 to-pink-400 shadow-lg"
+                                  className="absolute left-0 right-0 h-7 shadow-lg"
                                   style={{
-                                    top: "50%",
+                                    top: "45%",
                                     transform: `translateZ(${width / 2 + 1}px)`,
+                                    background: "linear-gradient(to right, #ec4899 0%, #f43f5e 50%, #ec4899 100%)",
+                                    boxShadow: "0 4px 8px rgba(0,0,0,0.3), inset 0 1px 2px rgba(255,255,255,0.3)",
                                   }}
                                 />
+                              )}
+
+                              {/* Fault Line Effect */}
+                              {config.style === "faultline" && tierIndex === 1 && (
+                                <div
+                                  className="absolute left-0 right-0 h-10 z-10 overflow-hidden shadow-lg"
+                                  style={{
+                                    top: "40%",
+                                    transform: `translateZ(${width / 2 + 2}px)`,
+                                  }}
+                                >
+                                  <div className="h-full bg-gradient-to-r from-pink-400 via-yellow-300 to-pink-400 flex items-center justify-center gap-1 px-2">
+                                    {Array.from({ length: 40 }).map((_, i) => (
+                                      <div
+                                        key={i}
+                                        className="w-1 h-1 rounded-full"
+                                        style={{
+                                          backgroundColor: ["#FF69B4", "#FFD700", "#87CEEB", "#98FF98"][i % 4],
+                                          boxShadow: "0 1px 2px rgba(0,0,0,0.3)",
+                                        }}
+                                      />
+                                    ))}
+                                  </div>
+                                </div>
                               )}
                             </div>
                           );
@@ -769,11 +972,13 @@ export default function ThreeDDesignerPage() {
                       {/* Cake Text */}
                       {config.text && (
                         <div
-                          className="absolute left-1/2 -translate-x-1/2 font-bold text-primary text-center px-4 py-2 bg-white/90 rounded-lg shadow-lg backdrop-blur-sm"
+                          className="absolute left-1/2 -translate-x-1/2 font-bold text-primary text-center px-6 py-3 bg-white/95 rounded-xl shadow-2xl backdrop-blur-sm border-2 border-white"
                           style={{
-                            bottom: getTierHeight(0) / 2,
-                            transform: `translateZ(${getTierWidth(0) / 2 + 10}px) translateX(-50%)`,
-                            fontSize: "clamp(14px, 1.8vw, 20px)",
+                            bottom: getTierHeight(0) / 2 - 15,
+                            transform: `translateZ(${getTierWidth(0, config.shapes[0]) / 2 + 15}px) translateX(-50%)`,
+                            fontSize: "clamp(14px, 2vw, 22px)",
+                            maxWidth: "80%",
+                            boxShadow: "0 8px 20px rgba(0,0,0,0.2)",
                           }}
                         >
                           {config.text}
@@ -789,48 +994,48 @@ export default function ThreeDDesignerPage() {
                               Array.from({ length: config.tiers }).reduce(
                                 (sum: number, _, i) => sum + getTierHeight(i),
                                 0
-                              ) + 10,
+                              ) + 15,
                             transform: "translateZ(0px) translateX(-50%)",
                           }}
                         >
                           {config.topper === "heart" && (
-                            <Heart className="h-10 w-10 text-red-500 fill-red-500 drop-shadow-lg" />
+                            <Heart className="h-12 w-12 text-red-500 fill-red-500 drop-shadow-2xl" style={{ filter: "drop-shadow(0 4px 8px rgba(0,0,0,0.3))" }} />
                           )}
                           {config.topper === "star" && (
-                            <Star className="h-10 w-10 text-yellow-500 fill-yellow-500 drop-shadow-lg" />
+                            <Star className="h-12 w-12 text-yellow-500 fill-yellow-500 drop-shadow-2xl" style={{ filter: "drop-shadow(0 4px 8px rgba(0,0,0,0.3))" }} />
                           )}
                           {config.topper === "flower" && (
-                            <Flower2 className="h-10 w-10 text-pink-500 drop-shadow-lg" />
+                            <Flower2 className="h-12 w-12 text-pink-500 drop-shadow-2xl" style={{ filter: "drop-shadow(0 4px 8px rgba(0,0,0,0.3))" }} />
                           )}
                           {config.topper === "sparkle" && (
-                            <Sparkles className="h-10 w-10 text-purple-500 drop-shadow-lg" />
+                            <Sparkles className="h-12 w-12 text-purple-500 drop-shadow-2xl" style={{ filter: "drop-shadow(0 4px 8px rgba(0,0,0,0.3))" }} />
                           )}
                         </div>
                       )}
                     </div>
 
                     {/* Info Badge */}
-                    <div className="absolute bottom-4 left-4 bg-white/90 backdrop-blur-sm rounded-lg px-4 py-2 shadow-lg">
-                      <p className="text-sm font-medium text-gray-700">
-                        {config.tiers} Tier • {FROSTING_TYPES.find(f => f.value === config.frostingType)?.name} • {TEXTURES.find(t => t.value === config.texture)?.name}
+                    <div className="absolute bottom-4 left-4 bg-white/95 backdrop-blur-sm rounded-xl px-4 py-3 shadow-xl border border-white">
+                      <p className="text-sm font-semibold text-gray-800">
+                        {config.tiers} Tier • {FROSTING_TYPES.find(f => f.value === config.frostingType)?.name}
                       </p>
-                      <p className="text-xs text-gray-500 mt-1">
-                        {COLOR_TECHNIQUES.find(c => c.value === config.colorTechnique)?.name} • {STYLES.find(s => s.value === config.style)?.name}
+                      <p className="text-xs text-gray-600 mt-1">
+                        {TEXTURES.find(t => t.value === config.texture)?.name} • {STYLES.find(s => s.value === config.style)?.name}
                       </p>
                     </div>
                   </div>
 
-                  {/* Action Buttons - Below Viewer */}
-                  <div className="bg-gray-50 border-t p-4 flex gap-2">
+                  {/* Action Buttons */}
+                  <div className="bg-gradient-to-r from-gray-50 to-gray-100 border-t p-4 flex gap-3">
                     <Button className="flex-1" size="lg" asChild>
                       <Link href="/custom-order">
                         <ShoppingCart className="h-5 w-5 mr-2" />
                         Order This Design
                       </Link>
                     </Button>
-                    <Button variant="outline" size="lg">
+                    <Button variant="outline" size="lg" className="flex-1">
                       <Download className="h-5 w-5 mr-2" />
-                      Save
+                      Save Design
                     </Button>
                   </div>
                 </CardContent>
@@ -841,7 +1046,7 @@ export default function ThreeDDesignerPage() {
           {/* Scrollable Controls Panel */}
           <div className="lg:col-span-5 space-y-4">
             {/* Presets */}
-            <Card>
+            <Card className="border-2">
               <CardContent className="p-4 space-y-3">
                 <Label className="text-lg font-semibold flex items-center gap-2">
                   <Sparkles className="h-5 w-5 text-primary" />
@@ -853,7 +1058,7 @@ export default function ThreeDDesignerPage() {
                       key={preset.name}
                       variant="outline"
                       onClick={() => applyPreset(preset)}
-                      className="w-full text-sm"
+                      className="w-full text-sm hover:bg-primary hover:text-primary-foreground transition-colors"
                     >
                       {preset.name}
                     </Button>
@@ -863,8 +1068,8 @@ export default function ThreeDDesignerPage() {
             </Card>
 
             {/* Cake Structure */}
-            <Card>
-              <CardContent className="p-4 space-y-3">
+            <Card className="border-2">
+              <CardContent className="p-4 space-y-4">
                 <Label className="text-lg font-semibold">Cake Structure</Label>
                 <div>
                   <Label className="text-sm text-muted-foreground mb-2 block">Number of Tiers</Label>
@@ -881,11 +1086,32 @@ export default function ThreeDDesignerPage() {
                     ))}
                   </div>
                 </div>
+
+                {/* Tier Shapes */}
+                {Array.from({ length: config.tiers }).map((_, tierIndex) => (
+                  <div key={tierIndex}>
+                    <Label className="text-sm mb-2 block">Tier {tierIndex + 1} Shape</Label>
+                    <div className="grid grid-cols-3 gap-2">
+                      {SHAPES.map((shape) => (
+                        <Button
+                          key={shape.value}
+                          variant={config.shapes[tierIndex] === shape.value ? "default" : "outline"}
+                          onClick={() => updateTierShape(tierIndex, shape.value)}
+                          size="sm"
+                          className="text-xs flex items-center justify-center gap-1"
+                        >
+                          <shape.icon className="h-3 w-3" />
+                          {shape.name}
+                        </Button>
+                      ))}
+                    </div>
+                  </div>
+                ))}
               </CardContent>
             </Card>
 
             {/* Frosting & Texture */}
-            <Card>
+            <Card className="border-2">
               <CardContent className="p-4 space-y-4">
                 <Label className="text-lg font-semibold">Frosting & Texture</Label>
 
@@ -925,7 +1151,7 @@ export default function ThreeDDesignerPage() {
             </Card>
 
             {/* Colors */}
-            <Card>
+            <Card className="border-2">
               <CardContent className="p-4 space-y-3">
                 <div className="flex items-center justify-between">
                   <Label className="text-lg font-semibold">Colors & Effects</Label>
@@ -950,13 +1176,13 @@ export default function ThreeDDesignerPage() {
 
                 {Array.from({ length: config.tiers }).map((_, tierIndex) => (
                   <div key={tierIndex}>
-                    <Label className="text-sm mb-2 block">Tier {tierIndex + 1}</Label>
+                    <Label className="text-sm mb-2 block">Tier {tierIndex + 1} Color</Label>
                     <div className="grid grid-cols-5 gap-2">
                       {COLORS.map((colorOption) => (
                         <button
                           key={colorOption.value}
                           onClick={() => updateTierColor(tierIndex, colorOption.value)}
-                          className="w-full aspect-square rounded-lg border-2 transition-all hover:scale-110"
+                          className="w-full aspect-square rounded-lg border-2 transition-all hover:scale-110 shadow-md"
                           style={{
                             backgroundColor: colorOption.value,
                             borderColor:
@@ -965,6 +1191,9 @@ export default function ThreeDDesignerPage() {
                                 : "#d1d5db",
                             borderWidth:
                               config.colors[tierIndex] === colorOption.value ? "3px" : "2px",
+                            boxShadow: config.colors[tierIndex] === colorOption.value
+                              ? "0 4px 6px rgba(0,0,0,0.2), 0 0 0 3px rgba(225,29,72,0.2)"
+                              : "0 2px 4px rgba(0,0,0,0.1)",
                           }}
                           title={colorOption.name}
                         />
@@ -973,31 +1202,31 @@ export default function ThreeDDesignerPage() {
                   </div>
                 ))}
 
-                <div className="flex gap-2 pt-2">
-                  <label className="flex items-center gap-2 cursor-pointer">
+                <div className="flex gap-3 pt-2 border-t">
+                  <label className="flex items-center gap-2 cursor-pointer flex-1">
                     <input
                       type="checkbox"
                       checked={config.metallic}
                       onChange={(e) => updateConfig({ metallic: e.target.checked })}
-                      className="rounded"
+                      className="rounded w-4 h-4"
                     />
-                    <span className="text-sm">Gold Accents</span>
+                    <span className="text-sm font-medium">Gold Accents</span>
                   </label>
-                  <label className="flex items-center gap-2 cursor-pointer">
+                  <label className="flex items-center gap-2 cursor-pointer flex-1">
                     <input
                       type="checkbox"
                       checked={config.glitter}
                       onChange={(e) => updateConfig({ glitter: e.target.checked })}
-                      className="rounded"
+                      className="rounded w-4 h-4"
                     />
-                    <span className="text-sm">Edible Glitter</span>
+                    <span className="text-sm font-medium">Glitter</span>
                   </label>
                 </div>
               </CardContent>
             </Card>
 
             {/* Piping & Borders */}
-            <Card>
+            <Card className="border-2">
               <CardContent className="p-4 space-y-3">
                 <Label className="text-lg font-semibold">Piping & Borders</Label>
                 <div className="grid grid-cols-2 gap-2">
@@ -1017,7 +1246,7 @@ export default function ThreeDDesignerPage() {
             </Card>
 
             {/* Decorations */}
-            <Card>
+            <Card className="border-2">
               <CardContent className="p-4 space-y-3">
                 <Label className="text-lg font-semibold">Decorative Elements</Label>
                 <div className="grid grid-cols-2 gap-2">
@@ -1050,7 +1279,7 @@ export default function ThreeDDesignerPage() {
             </Card>
 
             {/* Drip Effect */}
-            <Card>
+            <Card className="border-2">
               <CardContent className="p-4 space-y-3">
                 <Label className="text-lg font-semibold">Drip Effect</Label>
                 <label className="flex items-center gap-2 cursor-pointer">
@@ -1058,9 +1287,9 @@ export default function ThreeDDesignerPage() {
                     type="checkbox"
                     checked={config.dripEffect}
                     onChange={(e) => updateConfig({ dripEffect: e.target.checked })}
-                    className="rounded"
+                    className="rounded w-4 h-4"
                   />
-                  <span className="text-sm">Add Ganache Drip</span>
+                  <span className="text-sm font-medium">Add Ganache Drip</span>
                 </label>
                 {config.dripEffect && (
                   <div>
@@ -1076,7 +1305,7 @@ export default function ThreeDDesignerPage() {
                         <button
                           key={color.value}
                           onClick={() => updateConfig({ dripColor: color.value })}
-                          className="w-full aspect-square rounded-lg border-2 transition-all hover:scale-110"
+                          className="w-full aspect-square rounded-lg border-2 transition-all hover:scale-110 shadow-md"
                           style={{
                             backgroundColor: color.value,
                             borderColor: config.dripColor === color.value ? "#e11d48" : "#d1d5db",
@@ -1092,7 +1321,7 @@ export default function ThreeDDesignerPage() {
             </Card>
 
             {/* Cake Style */}
-            <Card>
+            <Card className="border-2">
               <CardContent className="p-4 space-y-3">
                 <Label className="text-lg font-semibold">Cake Style</Label>
                 <div className="grid grid-cols-2 gap-2">
@@ -1112,7 +1341,7 @@ export default function ThreeDDesignerPage() {
             </Card>
 
             {/* Cake Topper */}
-            <Card>
+            <Card className="border-2">
               <CardContent className="p-4 space-y-3">
                 <Label className="text-lg font-semibold">Cake Topper</Label>
                 <div className="grid grid-cols-4 gap-2">
@@ -1138,7 +1367,7 @@ export default function ThreeDDesignerPage() {
             </Card>
 
             {/* Custom Text */}
-            <Card>
+            <Card className="border-2">
               <CardContent className="p-4 space-y-3">
                 <Label className="text-lg font-semibold">Custom Message</Label>
                 <Input
@@ -1146,6 +1375,7 @@ export default function ThreeDDesignerPage() {
                   value={config.text}
                   onChange={(e) => updateConfig({ text: e.target.value })}
                   maxLength={40}
+                  className="text-base"
                 />
                 <p className="text-xs text-muted-foreground">
                   {config.text.length}/40 characters
