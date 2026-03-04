@@ -3,7 +3,9 @@
     "allow": [
       "Bash(npm install:*)",
       "Bash(git push:*)",
-      "Bash(git config:*)"
+      "Bash(git config:*)",
+      "Bash(git:*)",
+      "Bash(wc:*)"
     ]
   }
 }
