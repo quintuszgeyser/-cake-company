@@ -5,8 +5,8 @@ import { cookies } from "next/headers";
  * Create a Supabase client for server-side operations
  * Uses cookies for auth state management
  */
-export function createClient() {
-  const cookieStore = cookies();
+export async function createClient() {
+  const cookieStore = await cookies();
 
   return createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -35,7 +35,7 @@ export function createClient() {
  * @returns User object or null if not authenticated
  */
 export async function getUser() {
-  const supabase = createClient();
+  const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
@@ -50,7 +50,7 @@ export async function isAdmin(): Promise<boolean> {
   const user = await getUser();
   if (!user) return false;
 
-  const supabase = createClient();
+  const supabase = await createClient();
   const { data, error } = await supabase
     .from("admin_users")
     .select("*")
