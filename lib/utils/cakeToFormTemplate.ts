@@ -30,7 +30,7 @@ export function cakeToFormTemplate(cake: Cake | CakeTemplate): Partial<OrderForm
 /**
  * Infers appropriate color scheme based on cake details
  */
-function inferColorScheme(cake: Cake): string[] {
+function inferColorScheme(cake: Cake | CakeTemplate): string[] {
   // Map flavors/names to color suggestions
   const colorMap: Record<string, string[]> = {
     chocolate: ["white", "gold"],
