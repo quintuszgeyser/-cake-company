@@ -571,15 +571,17 @@ export default function ThreeDDesignerPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-pink-50 to-purple-50">
-      <div className="container mx-auto px-4 py-6">
+    <div className="min-h-screen" style={{ backgroundColor: '#0A0A0A' }}>
+      <div className="container mx-auto px-4 py-8">
         {/* Header */}
-        <div className="flex items-center justify-between mb-6">
-          <Link href="/" className="inline-flex items-center text-primary hover:underline">
+        <div className="flex items-center justify-between mb-8">
+          <Link href="/" className="inline-flex items-center transition-colors" style={{ color: '#FFF8E7' }}>
             <ArrowLeft className="h-4 w-4 mr-2" />
             Back
           </Link>
-          <h1 className="text-2xl md:text-3xl font-bold">3D Cake Designer</h1>
+          <h1 className="font-black" style={{ fontSize: 'clamp(1.75rem, 3.5vw, 3.5rem)', color: '#FFF8E7' }}>
+            3D Cake Designer
+          </h1>
           <div className="w-16" />
         </div>
 
@@ -587,19 +589,38 @@ export default function ThreeDDesignerPage() {
           {/* Sticky Cake Viewer */}
           <div className="lg:col-span-7">
             <div className="lg:sticky lg:top-6">
-              <Card className="overflow-hidden shadow-2xl border-2">
+              <Card
+                className="overflow-hidden"
+                style={{
+                  boxShadow: '0 30px 80px rgba(0, 0, 0, 0.6)',
+                  border: '1px solid #2A2A2A'
+                }}
+              >
                 <CardContent className="p-0">
                   {/* Controls Bar */}
-                  <div className="bg-gradient-to-r from-pink-100 to-purple-100 border-b p-3 flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      <Button
-                        size="sm"
-                        variant="outline"
+                  <div
+                    className="border-b p-4 flex items-center justify-between"
+                    style={{
+                      background: 'rgba(20, 20, 20, 0.7)',
+                      backdropFilter: 'blur(20px)',
+                      borderBottom: '1px solid rgba(212, 175, 55, 0.15)'
+                    }}
+                  >
+                    <div className="flex items-center gap-3">
+                      <motion.button
+                        className="px-4 py-2 rounded-lg font-medium flex items-center gap-2"
+                        style={{
+                          border: '1px solid #D4AF37',
+                          color: '#D4AF37',
+                          backgroundColor: 'transparent'
+                        }}
                         onClick={() => updateConfig({ rotation: 15 })}
+                        whileHover={{ backgroundColor: '#D4AF37', color: '#0A0A0A' }}
+                        whileTap={{ scale: 0.95 }}
                       >
                         <RotateCcw className="h-4 w-4" />
-                      </Button>
-                      <span className="text-sm text-muted-foreground">
+                      </motion.button>
+                      <span className="text-sm font-medium" style={{ color: 'rgba(255, 248, 231, 0.7)' }}>
                         Drag to rotate • Click tier to edit
                       </span>
                     </div>
@@ -609,7 +630,7 @@ export default function ThreeDDesignerPage() {
                   <div
                     className="relative h-[600px] overflow-hidden cursor-grab active:cursor-grabbing"
                     style={{
-                      background: "linear-gradient(to bottom, #f9f9f9 0%, #ffffff 50%, #f5f5f5 100%)",
+                      background: "linear-gradient(to bottom, #0A0A0A 0%, #141414 50%, #0A0A0A 100%)",
                     }}
                     onMouseDown={handleMouseDown}
                     onMouseMove={handleMouseMove}
@@ -617,19 +638,19 @@ export default function ThreeDDesignerPage() {
                     onMouseLeave={handleMouseUp}
                     onClick={() => updateConfig({ selectedTier: null })}
                   >
-                    {/* Wooden Table */}
+                    {/* Dark Wooden Table */}
                     <div
                       className="absolute bottom-0 inset-x-0 h-32"
                       style={{
                         background: `
                           linear-gradient(90deg,
-                            #8B4513 0%, #A0522D 10%, #8B4513 20%,
-                            #A0522D 30%, #8B4513 40%, #A0522D 50%,
-                            #8B4513 60%, #A0522D 70%, #8B4513 80%,
-                            #A0522D 90%, #8B4513 100%
+                            #1A1412 0%, #2A1F1A 10%, #1A1412 20%,
+                            #2A1F1A 30%, #1A1412 40%, #2A1F1A 50%,
+                            #1A1412 60%, #2A1F1A 70%, #1A1412 80%,
+                            #2A1F1A 90%, #1A1412 100%
                           )
                         `,
-                        boxShadow: "inset 0 -10px 30px rgba(0,0,0,0.3), inset 0 10px 20px rgba(255,255,255,0.1)",
+                        boxShadow: "inset 0 -10px 30px rgba(0,0,0,0.6), inset 0 10px 10px rgba(212,175,55,0.03)",
                       }}
                     >
                       {/* Wood grain texture */}
@@ -754,17 +775,45 @@ export default function ThreeDDesignerPage() {
                   </div>
 
                   {/* Actions */}
-                  <div className="bg-gradient-to-r from-gray-50 to-gray-100 border-t p-4 flex gap-3">
-                    <Button className="flex-1" size="lg" asChild>
-                      <Link href="/custom-order">
-                        <ShoppingCart className="h-5 w-5 mr-2" />
+                  <div
+                    className="border-t p-6 flex gap-4"
+                    style={{
+                      background: 'rgba(20, 20, 20, 0.7)',
+                      backdropFilter: 'blur(20px)',
+                      borderTop: '1px solid rgba(212, 175, 55, 0.15)'
+                    }}
+                  >
+                    <Link href="/custom-order" className="flex-1">
+                      <motion.button
+                        className="w-full px-6 py-4 rounded-lg font-semibold flex items-center justify-center gap-2"
+                        style={{
+                          backgroundColor: '#D4AF37',
+                          color: '#0A0A0A',
+                          boxShadow: '0 0 20px rgba(212, 175, 55, 0.3)'
+                        }}
+                        whileHover={{
+                          boxShadow: '0 0 30px rgba(212, 175, 55, 0.5)',
+                          scale: 1.02
+                        }}
+                        whileTap={{ scale: 0.98 }}
+                      >
+                        <ShoppingCart className="h-5 w-5" />
                         Order This Cake
-                      </Link>
-                    </Button>
-                    <Button variant="outline" size="lg">
-                      <Download className="h-5 w-5 mr-2" />
+                      </motion.button>
+                    </Link>
+                    <motion.button
+                      className="px-6 py-4 rounded-lg font-semibold flex items-center gap-2"
+                      style={{
+                        border: '2px solid #D4AF37',
+                        color: '#D4AF37',
+                        backgroundColor: 'transparent'
+                      }}
+                      whileHover={{ backgroundColor: '#D4AF37', color: '#0A0A0A' }}
+                      whileTap={{ scale: 0.95 }}
+                    >
+                      <Download className="h-5 w-5" />
                       Save
-                    </Button>
+                    </motion.button>
                   </div>
                 </CardContent>
               </Card>
