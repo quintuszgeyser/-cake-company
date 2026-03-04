@@ -138,7 +138,7 @@ export function CakeCard({
           className="p-6 pt-0"
           style={{ backgroundColor: 'rgba(20, 20, 20, 0.5)' }}
         >
-          <Link href="/custom-order" onClick={(e) => e.stopPropagation()} className="w-full block">
+          <Link href={`/custom-order?cakeId=${id}`} onClick={(e) => e.stopPropagation()} className="w-full block">
             <motion.button
               className="w-full px-6 py-4 rounded-lg font-medium flex items-center justify-center gap-2 group/btn transition-all duration-300"
               style={{

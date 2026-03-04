@@ -266,7 +266,7 @@ export default function CakeDetailPage({
 
               {/* Action Buttons */}
               <div className="flex gap-4 pt-6">
-                <Link href="/custom-order" className="flex-1">
+                <Link href={`/custom-order?cakeId=${cake.id}`} className="flex-1">
                   <motion.button
                     className="w-full text-lg px-6 py-4 rounded-lg font-semibold flex items-center justify-center gap-2 transition-all duration-300"
                     style={{

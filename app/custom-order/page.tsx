@@ -1,17 +1,20 @@
 "use client";
 
-import { useState } from "react";
+import { useState, Suspense } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { useSearchParams } from "next/navigation";
 import { StepIndicator } from "@/components/order/StepIndicator";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { ArrowLeft, ArrowRight, Send, Sparkles } from "lucide-react";
+import { ArrowLeft, ArrowRight, Send, Sparkles, X } from "lucide-react";
 import { orderFormSchema, type OrderFormValues } from "@/lib/validations";
+import { cakes } from "@/lib/data/cakes";
+import { cakeToFormTemplate } from "@/lib/utils/cakeToFormTemplate";
 
 const steps = [
   { title: "Occasion", description: "What are you celebrating?" },
@@ -69,7 +72,11 @@ const dietaryOptions = [
   "Nut-Free", "Sugar-Free", "Egg-Free"
 ];
 
-export default function CustomOrderPage() {
+function CustomOrderForm() {
+  const searchParams = useSearchParams();
+  const cakeId = searchParams.get('cakeId');
+  const templateCake = cakeId ? cakes.find(c => c.id === cakeId) : null;
+
   const [currentStep, setCurrentStep] = useState(1);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -81,14 +88,16 @@ export default function CustomOrderPage() {
     formState: { errors },
   } = useForm<OrderFormValues>({
     resolver: zodResolver(orderFormSchema),
-    defaultValues: {
-      tiers: 1,
-      servings: 12,
-      flavors: [],
-      colorScheme: [],
-      dietary: [],
-      setupRequired: false,
-    },
+    defaultValues: templateCake
+      ? cakeToFormTemplate(templateCake)
+      : {
+          tiers: 1,
+          servings: 12,
+          flavors: [],
+          colorScheme: [],
+          dietary: [],
+          setupRequired: false,
+        },
   });
 
   const formValues = watch();
@@ -195,6 +204,44 @@ export default function CustomOrderPage() {
             Let's create something extraordinary together
           </p>
         </motion.div>
+
+        {/* Template Indicator */}
+        {templateCake && (
+          <motion.div
+            className="mb-8"
+            initial={{ opacity: 0, y: -10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5 }}
+          >
+            <div
+              className="flex items-center gap-4 p-4 rounded-lg"
+              style={{
+                backgroundColor: 'rgba(212, 175, 55, 0.1)',
+                border: '1px solid rgba(212, 175, 55, 0.3)',
+              }}
+            >
+              <img
+                src={templateCake.images[0]}
+                alt={templateCake.name}
+                className="w-16 h-16 rounded-lg object-cover"
+              />
+              <div className="flex-1">
+                <p className="text-sm font-semibold" style={{ color: '#D4AF37' }}>
+                  Pre-filled based on:
+                </p>
+                <p style={{ color: '#FFF8E7' }}>{templateCake.name}</p>
+              </div>
+              <button
+                type="button"
+                onClick={() => window.location.href = '/custom-order'}
+                className="p-2 rounded-lg hover:bg-black/20 transition-colors"
+                style={{ color: '#999' }}
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+          </motion.div>
+        )}
 
         {/* Step Indicator */}
         <StepIndicator
@@ -755,5 +802,20 @@ export default function CustomOrderPage() {
         </form>
       </div>
     </div>
+  );
+}
+
+export default function CustomOrderPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen py-20 flex items-center justify-center" style={{ backgroundColor: '#0A0A0A' }}>
+        <div className="text-center">
+          <Sparkles className="w-12 h-12 mx-auto mb-4 animate-pulse" style={{ color: '#D4AF37' }} />
+          <p style={{ color: '#FFF8E7' }}>Loading your custom order form...</p>
+        </div>
+      </div>
+    }>
+      <CustomOrderForm />
+    </Suspense>
   );
 }
