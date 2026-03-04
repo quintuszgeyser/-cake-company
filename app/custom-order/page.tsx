@@ -154,22 +154,44 @@ export default function CustomOrderPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-pink-50 to-white py-12">
+    <div className="min-h-screen py-20" style={{ backgroundColor: '#0A0A0A' }}>
       <div className="container max-w-4xl">
         {/* Header */}
         <motion.div
-          className="text-center mb-12"
+          className="text-center mb-16"
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.8, ease: [0.25, 0.1, 0.25, 1] }}
         >
-          <div className="inline-flex items-center gap-2 px-4 py-2 bg-white rounded-full shadow-sm mb-4">
-            <Sparkles className="w-4 h-4 text-primary" />
-            <span className="text-sm font-medium">Custom Cake Designer</span>
+          <div
+            className="inline-flex items-center gap-2 px-5 py-2 rounded-full mb-8 text-xs font-medium uppercase"
+            style={{
+              border: '1px solid rgba(212, 175, 55, 0.3)',
+              color: '#D4AF37',
+              letterSpacing: '0.1em'
+            }}
+          >
+            <Sparkles className="w-4 h-4" />
+            Custom Cake Designer
           </div>
-          <h1 className="text-4xl md:text-5xl font-bold mb-4 bg-gradient-to-r from-pink-600 to-purple-600 bg-clip-text text-transparent">
-            Design Your Dream Cake
+          <h1
+            className="font-black mb-6"
+            style={{
+              fontSize: 'clamp(3rem, 6vw, 6rem)',
+              color: '#FFF8E7'
+            }}
+          >
+            Design Your<br />
+            <span style={{
+              background: 'linear-gradient(135deg, #D4AF37 0%, #FFD700 50%, #D4AF37 100%)',
+              WebkitBackgroundClip: 'text',
+              WebkitTextFillColor: 'transparent',
+              backgroundClip: 'text'
+            }}>
+              Dream Cake
+            </span>
           </h1>
-          <p className="text-lg text-muted-foreground">
+          <p className="text-xl leading-relaxed" style={{ color: 'rgba(255, 248, 231, 0.6)' }}>
             Let's create something extraordinary together
           </p>
         </motion.div>
@@ -183,8 +205,15 @@ export default function CustomOrderPage() {
 
         {/* Form */}
         <form onSubmit={handleSubmit(onSubmit)}>
-          <Card className="mb-8">
-            <CardContent className="p-6 md:p-8">
+          <Card
+            className="mb-8"
+            style={{
+              backgroundColor: '#141414',
+              border: '1px solid #2A2A2A',
+              boxShadow: '0 20px 60px rgba(0, 0, 0, 0.5)'
+            }}
+          >
+            <CardContent className="p-8 md:p-12">
               <AnimatePresence mode="wait">
                 {/* Step 1: Occasion */}
                 {currentStep === 1 && (
