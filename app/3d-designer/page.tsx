@@ -846,7 +846,7 @@ export default function ThreeDDesignerPage() {
                       {SHAPES.map((shape) => (
                         <Button
                           key={shape.value}
-                          variant={config.shapes[config.selectedTier] === shape.value ? "default" : "outline"}
+                          variant={config.shapes[config.selectedTier!] === shape.value ? "default" : "outline"}
                           onClick={() => updateTierShape(config.selectedTier!, shape.value)}
                         >
                           {shape.name}
@@ -865,7 +865,7 @@ export default function ThreeDDesignerPage() {
                           className="aspect-square rounded-lg border-4 transition-all hover:scale-110"
                           style={{
                             backgroundColor: color.value,
-                            borderColor: config.colors[config.selectedTier] === color.value ? "#E91E63" : "#e5e7eb",
+                            borderColor: config.colors[config.selectedTier!] === color.value ? "#E91E63" : "#e5e7eb",
                           }}
                           title={color.name}
                         />
