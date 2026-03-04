@@ -101,20 +101,24 @@ function PaymentContent() {
 
   if (!orderId || !amount) {
     return (
-      <div className="min-h-screen bg-gradient-to-b from-pink-50 to-white flex items-center justify-center">
-        <Card className="max-w-md mx-4">
-          <CardContent className="p-8 text-center">
-            <AlertCircle className="w-16 h-16 text-destructive mx-auto mb-4" />
-            <h2 className="text-2xl font-bold mb-2">Invalid Payment Link</h2>
-            <p className="text-muted-foreground mb-6">
+      <div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: '#0A0A0A' }}>
+        <Card className="max-w-md mx-4" style={{ backgroundColor: '#141414', border: '1px solid #2A2A2A' }}>
+          <CardContent className="p-10 text-center">
+            <AlertCircle className="w-20 h-20 mx-auto mb-6" style={{ color: '#D4AF37' }} />
+            <h2 className="text-3xl font-bold mb-3" style={{ color: '#FFF8E7' }}>Invalid Payment Link</h2>
+            <p className="mb-8" style={{ color: 'rgba(255, 248, 231, 0.6)' }}>
               This payment link is invalid or has expired.
             </p>
-            <Button asChild>
-              <Link href="/cakes">
-                <ArrowLeft className="mr-2 h-4 w-4" />
+            <Link href="/cakes">
+              <motion.button
+                className="px-6 py-3 rounded-lg font-semibold flex items-center gap-2 mx-auto"
+                style={{ border: '2px solid #D4AF37', color: '#D4AF37' }}
+                whileHover={{ backgroundColor: '#D4AF37', color: '#0A0A0A' }}
+              >
+                <ArrowLeft className="h-4 w-4" />
                 Back to Gallery
-              </Link>
-            </Button>
+              </motion.button>
+            </Link>
           </CardContent>
         </Card>
       </div>
@@ -123,26 +127,53 @@ function PaymentContent() {
 
   if (paymentStatus === "success") {
     return (
-      <div className="min-h-screen bg-gradient-to-b from-pink-50 to-white flex items-center justify-center">
-        <Card className="max-w-md mx-4">
-          <CardContent className="p-8 text-center">
-            <CheckCircle className="w-16 h-16 text-green-600 mx-auto mb-4" />
-            <h2 className="text-2xl font-bold mb-2">Payment Successful!</h2>
-            <p className="text-muted-foreground mb-4">
-              Your order has been confirmed and we'll start preparing your cake.
-            </p>
-            <div className="bg-pink-50 rounded-lg p-4 mb-6">
-              <p className="text-sm text-muted-foreground mb-1">Order Number</p>
-              <p className="text-xl font-bold text-primary">{orderNumber}</p>
-            </div>
-            <p className="text-sm text-muted-foreground mb-6">
-              We've sent a confirmation email with all the details.
-            </p>
-            <Button asChild className="w-full">
-              <Link href="/">Back to Home</Link>
-            </Button>
-          </CardContent>
-        </Card>
+      <div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: '#0A0A0A' }}>
+        <motion.div
+          initial={{ opacity: 0, scale: 0.9 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ duration: 0.8, ease: [0.25, 0.1, 0.25, 1] }}
+        >
+          <Card className="max-w-md mx-4" style={{ backgroundColor: '#141414', border: '2px solid #D4AF37', boxShadow: '0 20px 60px rgba(212, 175, 55, 0.2)' }}>
+            <CardContent className="p-12 text-center">
+              <motion.div
+                initial={{ scale: 0 }}
+                animate={{ scale: 1 }}
+                transition={{ duration: 0.6, ease: [0.25, 0.1, 0.25, 1], delay: 0.2 }}
+              >
+                <CheckCircle className="w-24 h-24 mx-auto mb-8" style={{ color: '#D4AF37' }} />
+              </motion.div>
+              <h2 className="font-black mb-4" style={{ fontSize: 'clamp(1.75rem, 3.5vw, 3.5rem)', color: '#FFF8E7' }}>
+                Payment Successful!
+              </h2>
+              <p className="text-lg mb-8 leading-relaxed" style={{ color: 'rgba(255, 248, 231, 0.6)' }}>
+                Your order has been confirmed and we'll start preparing your cake.
+              </p>
+              <div className="rounded-xl p-6 mb-8" style={{ backgroundColor: 'rgba(20, 20, 20, 0.6)', border: '1px solid rgba(212, 175, 55, 0.3)' }}>
+                <p className="text-sm mb-2 uppercase" style={{ color: 'rgba(255, 248, 231, 0.5)', letterSpacing: '0.1em' }}>
+                  Order Number
+                </p>
+                <p className="text-3xl font-bold" style={{ color: '#D4AF37' }}>{orderNumber}</p>
+              </div>
+              <p className="text-sm mb-10" style={{ color: 'rgba(255, 248, 231, 0.5)' }}>
+                We've sent a confirmation email with all the details.
+              </p>
+              <Link href="/" className="w-full block">
+                <motion.button
+                  className="w-full py-4 rounded-lg font-semibold text-lg"
+                  style={{
+                    backgroundColor: '#D4AF37',
+                    color: '#0A0A0A',
+                    boxShadow: '0 0 20px rgba(212, 175, 55, 0.3)'
+                  }}
+                  whileHover={{ boxShadow: '0 0 30px rgba(212, 175, 55, 0.5)', scale: 1.02 }}
+                  whileTap={{ scale: 0.98 }}
+                >
+                  Back to Home
+                </motion.button>
+              </Link>
+            </CardContent>
+          </Card>
+        </motion.div>
       </div>
     );
   }
