@@ -4,8 +4,6 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Card, CardContent } from "@/components/ui/card";
 import {
   LayoutDashboard,
   ShoppingBag,
@@ -13,87 +11,50 @@ import {
   Users,
   Settings,
   LogOut,
-  Lock,
+  DollarSign,
 } from "lucide-react";
+import { createClient } from "@/lib/auth/supabase-client";
 
 export default function AdminLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [password, setPassword] = useState("");
-  const [error, setError] = useState("");
+  const [loading, setLoading] = useState(true);
+  const [userEmail, setUserEmail] = useState<string | null>(null);
   const pathname = usePathname();
   const router = useRouter();
 
-  // Simple password authentication (for MVP - replace with proper auth later)
-  const ADMIN_PASSWORD = "admin123"; // TODO: Move to env variable
-
   useEffect(() => {
-    // Check if already authenticated
-    const auth = sessionStorage.getItem("admin_auth");
-    if (auth === "true") {
-      setIsAuthenticated(true);
-    }
+    checkAuth();
   }, []);
 
-  const handleLogin = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (password === ADMIN_PASSWORD) {
-      setIsAuthenticated(true);
-      sessionStorage.setItem("admin_auth", "true");
-      setError("");
-    } else {
-      setError("Incorrect password");
+  const checkAuth = async () => {
+    const supabase = createClient();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+
+    if (user) {
+      setUserEmail(user.email || null);
     }
+    setLoading(false);
   };
 
-  const handleLogout = () => {
-    setIsAuthenticated(false);
-    sessionStorage.removeItem("admin_auth");
-    router.push("/admin");
+  const handleLogout = async () => {
+    const supabase = createClient();
+    await supabase.auth.signOut();
+    router.push("/login");
+    router.refresh();
   };
 
-  if (!isAuthenticated) {
+  if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-pink-50 to-purple-50">
-        <Card className="w-full max-w-md">
-          <CardContent className="p-8">
-            <div className="text-center mb-6">
-              <div className="inline-flex items-center justify-center w-16 h-16 bg-primary/10 rounded-full mb-4">
-                <Lock className="w-8 h-8 text-primary" />
-              </div>
-              <h1 className="text-2xl font-bold mb-2">Admin Access</h1>
-              <p className="text-muted-foreground">
-                Enter your password to continue
-              </p>
-            </div>
-
-            <form onSubmit={handleLogin} className="space-y-4">
-              <div>
-                <Input
-                  type="password"
-                  placeholder="Admin password"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  autoFocus
-                />
-                {error && (
-                  <p className="text-sm text-destructive mt-2">{error}</p>
-                )}
-              </div>
-
-              <Button type="submit" className="w-full">
-                Sign In
-              </Button>
-
-              <p className="text-xs text-muted-foreground text-center mt-4">
-                For demo: password is <code className="bg-secondary px-1 rounded">admin123</code>
-              </p>
-            </form>
-          </CardContent>
-        </Card>
+      <div
+        className="min-h-screen flex items-center justify-center"
+        style={{ backgroundColor: "#0A0A0A" }}
+      >
+        <p style={{ color: "rgba(255, 248, 231, 0.5)" }}>Loading...</p>
       </div>
     );
   }
@@ -103,6 +64,7 @@ export default function AdminLayout({
     { name: "Orders", href: "/admin/orders", icon: ShoppingBag },
     { name: "Products", href: "/admin/products", icon: Cake },
     { name: "Customers", href: "/admin/customers", icon: Users },
+    { name: "Pricing", href: "/admin/pricing", icon: DollarSign },
     { name: "Settings", href: "/admin/settings", icon: Settings },
   ];
 
@@ -141,6 +103,11 @@ export default function AdminLayout({
         </nav>
 
         <div className="absolute bottom-0 left-0 right-0 p-4 border-t">
+          {userEmail && (
+            <p className="text-xs text-muted-foreground mb-2 px-4 truncate">
+              {userEmail}
+            </p>
+          )}
           <Button
             variant="ghost"
             className="w-full justify-start"

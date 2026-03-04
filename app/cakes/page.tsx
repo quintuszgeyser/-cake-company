@@ -1,12 +1,17 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { motion } from "framer-motion";
 import { CakeCard } from "@/components/cake/CakeCard";
 import { CakeFilters } from "@/components/cake/CakeFilters";
-import { filterCakes, cakes } from "@/lib/data/cakes";
+import { CakeTemplate } from "@/types/cake";
+import { PricingConfig, calculateOrderPrice } from "@/lib/utils/pricing";
 
 export default function CakesPage() {
+  const [cakes, setCakes] = useState<CakeTemplate[]>([]);
+  const [pricingConfig, setPricingConfig] = useState<PricingConfig | null>(null);
+  const [loading, setLoading] = useState(true);
+
   const [filters, setFilters] = useState<{
     category?: string;
     minPrice?: number;
@@ -16,9 +21,69 @@ export default function CakesPage() {
     search?: string;
   }>({});
 
+  // Fetch cakes from database API
+  useEffect(() => {
+    Promise.all([
+      fetch("/api/products").then((res) => res.json()),
+      fetch("/api/pricing").then((res) => res.json()),
+    ])
+      .then(([productsData, pricingData]) => {
+        if (productsData.success) {
+          setCakes(productsData.products);
+        }
+        setPricingConfig(pricingData);
+      })
+      .catch((error) => {
+        console.error("Failed to fetch data:", error);
+      })
+      .finally(() => {
+        setLoading(false);
+      });
+  }, []);
+
+  // Filter cakes client-side
   const filteredCakes = useMemo(() => {
-    return filterCakes(filters);
-  }, [filters]);
+    return cakes.filter((cake) => {
+      // Category filter
+      if (filters.category && cake.category !== filters.category) {
+        return false;
+      }
+
+      // Calculate dynamic price for filtering
+      const price = pricingConfig && cake.template_data
+        ? calculateOrderPrice(cake.template_data, pricingConfig)
+        : cake.base_price;
+
+      // Price filters
+      if (filters.minPrice && price < filters.minPrice) {
+        return false;
+      }
+      if (filters.maxPrice && price > filters.maxPrice) {
+        return false;
+      }
+
+      // Servings filter
+      if (filters.minServings && cake.servings < filters.minServings) {
+        return false;
+      }
+
+      // Dietary filter
+      if (filters.dietary && !cake.dietary.includes(filters.dietary)) {
+        return false;
+      }
+
+      // Search filter
+      if (filters.search) {
+        const searchLower = filters.search.toLowerCase();
+        return (
+          cake.name.toLowerCase().includes(searchLower) ||
+          cake.description.toLowerCase().includes(searchLower)
+        );
+      }
+
+      return true;
+    });
+  }, [cakes, filters, pricingConfig]);
 
   return (
     <div className="min-h-screen" style={{ backgroundColor: '#0A0A0A' }}>
@@ -100,30 +165,41 @@ export default function CakesPage() {
               </motion.div>
 
               {/* Products Grid */}
-              {filteredCakes.length > 0 ? (
+              {loading ? (
+                <div className="text-center py-32">
+                  <p style={{ color: 'rgba(255, 248, 231, 0.5)' }}>Loading cakes...</p>
+                </div>
+              ) : filteredCakes.length > 0 ? (
                 <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-8">
-                  {filteredCakes.map((cake, index) => (
-                    <motion.div
-                      key={cake.id}
-                      initial={{ opacity: 0, y: 40 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{
-                        duration: 0.6,
-                        delay: index * 0.1,
-                        ease: [0.25, 0.1, 0.25, 1],
-                      }}
-                    >
-                      <CakeCard
-                        id={cake.slug}
-                        name={cake.name}
-                        description={cake.description}
-                        price={cake.price}
-                        image={cake.images[0]}
-                        category={cake.category}
-                        servings={cake.servings}
-                      />
-                    </motion.div>
-                  ))}
+                  {filteredCakes.map((cake, index) => {
+                    // Calculate dynamic price
+                    const displayPrice = pricingConfig && cake.template_data
+                      ? calculateOrderPrice(cake.template_data, pricingConfig)
+                      : cake.base_price;
+
+                    return (
+                      <motion.div
+                        key={cake.id}
+                        initial={{ opacity: 0, y: 40 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{
+                          duration: 0.6,
+                          delay: index * 0.1,
+                          ease: [0.25, 0.1, 0.25, 1],
+                        }}
+                      >
+                        <CakeCard
+                          id={cake.slug}
+                          name={cake.name}
+                          description={cake.description}
+                          price={displayPrice}
+                          image={cake.images[0]}
+                          category={cake.category}
+                          servings={cake.servings}
+                        />
+                      </motion.div>
+                    );
+                  })}
                 </div>
               ) : (
                 <motion.div

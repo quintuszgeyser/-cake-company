@@ -13,8 +13,9 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { ArrowLeft, ArrowRight, Send, Sparkles, X } from "lucide-react";
 import { orderFormSchema, type OrderFormValues } from "@/lib/validations";
-import { cakes } from "@/lib/data/cakes";
 import { cakeToFormTemplate } from "@/lib/utils/cakeToFormTemplate";
+import { calculateOrderPrice, PricingConfig } from "@/lib/utils/pricing";
+import { CakeTemplate } from "@/types/cake";
 
 const steps = [
   { title: "Occasion", description: "What are you celebrating?" },
@@ -75,10 +76,11 @@ const dietaryOptions = [
 function CustomOrderForm() {
   const searchParams = useSearchParams();
   const cakeId = searchParams.get('cakeId');
-  const templateCake = cakeId ? cakes.find(c => c.id === cakeId) : null;
+  const [templateCake, setTemplateCake] = useState<CakeTemplate | null>(null);
 
   const [currentStep, setCurrentStep] = useState(1);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [pricingConfig, setPricingConfig] = useState<PricingConfig | null>(null);
 
   const {
     register,
@@ -101,6 +103,36 @@ function CustomOrderForm() {
 
   const formValues = watch();
 
+  // Fetch pricing configuration and template cake on mount
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        // Fetch pricing config
+        const pricingRes = await fetch('/api/pricing');
+        const pricingData = await pricingRes.json();
+        setPricingConfig(pricingData);
+
+        // Fetch template cake if cakeId is provided
+        if (cakeId) {
+          const productsRes = await fetch('/api/products');
+          const productsData = await productsRes.json();
+          if (productsData.success) {
+            const cake = productsData.products.find(
+              (p: CakeTemplate) => p.id === cakeId || p.slug === cakeId
+            );
+            if (cake) {
+              setTemplateCake(cake);
+            }
+          }
+        }
+      } catch (error) {
+        console.error('Failed to fetch data:', error);
+      }
+    };
+
+    fetchData();
+  }, [cakeId]);
+
   // Apply template when cakeId changes
   useEffect(() => {
     if (templateCake) {
@@ -115,18 +147,8 @@ function CustomOrderForm() {
   }, [templateCake, setValue]);
 
   const calculatePrice = () => {
-    let basePrice = 50;
-    const servings = formValues.servings || 12;
-    const tiers = formValues.tiers || 1;
-
-    basePrice += (servings / 10) * 15;
-    basePrice += (tiers - 1) * 30;
-
-    if (formValues.dietary?.includes("Vegan") || formValues.dietary?.includes("Gluten-Free")) {
-      basePrice += 15;
-    }
-
-    return Math.round(basePrice);
+    if (!pricingConfig) return 0;
+    return calculateOrderPrice(formValues, pricingConfig);
   };
 
   const onSubmit = async (data: OrderFormValues) => {

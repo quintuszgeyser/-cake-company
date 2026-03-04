@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createOrder, createOrUpdateCustomer } from "@/lib/db/queries";
 import { orderFormSchema } from "@/lib/validations";
+import { createClient } from "@/lib/db/supabase";
+import { calculateOrderPrice } from "@/lib/utils/pricing";
 
 export async function POST(request: NextRequest) {
   try {
@@ -9,16 +11,27 @@ export async function POST(request: NextRequest) {
     // Validate the order data
     const validatedData = orderFormSchema.parse(body);
 
-    // Calculate estimated price
-    let estimatedPrice = 50;
-    estimatedPrice += (validatedData.servings / 10) * 15;
-    estimatedPrice += (validatedData.tiers - 1) * 30;
-    if (validatedData.dietary?.includes("Vegan") || validatedData.dietary?.includes("Gluten-Free")) {
-      estimatedPrice += 15;
+    // Fetch active pricing configuration
+    const supabase = createClient();
+    const { data: pricingConfig, error: pricingError } = await supabase
+      .from("pricing_config")
+      .select("*")
+      .eq("active", true)
+      .single();
+
+    if (pricingError || !pricingConfig) {
+      console.error("Failed to fetch pricing config:", pricingError);
+      return NextResponse.json(
+        {
+          success: false,
+          error: "Failed to calculate pricing. Please try again.",
+        },
+        { status: 500 }
+      );
     }
-    if (validatedData.setupRequired) {
-      estimatedPrice += 25;
-    }
+
+    // Calculate estimated price using dynamic pricing engine
+    const estimatedPrice = calculateOrderPrice(validatedData, pricingConfig);
 
     // Create or update customer
     const customer = await createOrUpdateCustomer({
@@ -31,7 +44,7 @@ export async function POST(request: NextRequest) {
     const order = await createOrder({
       ...validatedData,
       customer_id: customer.id,
-      estimatedPrice: Math.round(estimatedPrice),
+      estimatedPrice,
     });
 
     return NextResponse.json({

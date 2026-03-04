@@ -4,7 +4,7 @@
 -- Enable UUID extension
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 
--- Products table (cakes)
+-- Products table (cakes / templates)
 CREATE TABLE IF NOT EXISTS products (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
   slug TEXT UNIQUE NOT NULL,
@@ -18,9 +18,72 @@ CREATE TABLE IF NOT EXISTS products (
   dietary TEXT[] DEFAULT '{}',
   featured BOOLEAN DEFAULT false,
   available BOOLEAN DEFAULT true,
+
+  -- Template data (saved custom order configuration)
+  template_data JSONB,
+
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
+
+-- Pricing configuration table
+CREATE TABLE IF NOT EXISTS pricing_config (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+
+  -- Base pricing
+  base_price DECIMAL(10, 2) NOT NULL DEFAULT 50.00,
+
+  -- Per-unit costs
+  price_per_serving DECIMAL(10, 2) NOT NULL DEFAULT 1.50,
+  price_per_tier DECIMAL(10, 2) NOT NULL DEFAULT 30.00,
+
+  -- Dietary surcharges
+  vegan_surcharge DECIMAL(10, 2) NOT NULL DEFAULT 15.00,
+  gluten_free_surcharge DECIMAL(10, 2) NOT NULL DEFAULT 15.00,
+  dairy_free_surcharge DECIMAL(10, 2) NOT NULL DEFAULT 10.00,
+  nut_free_surcharge DECIMAL(10, 2) NOT NULL DEFAULT 0.00,
+  sugar_free_surcharge DECIMAL(10, 2) NOT NULL DEFAULT 12.00,
+
+  -- Additional costs
+  setup_fee DECIMAL(10, 2) NOT NULL DEFAULT 25.00,
+  rush_delivery_fee DECIMAL(10, 2) NOT NULL DEFAULT 50.00,
+
+  -- Premium costs (JSONB for flexibility)
+  flavor_premiums JSONB DEFAULT '{}',
+  filling_premiums JSONB DEFAULT '{}',
+
+  -- Metadata
+  active BOOLEAN DEFAULT true,
+  notes TEXT,
+  updated_by TEXT,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- Insert default pricing configuration
+INSERT INTO pricing_config (
+  base_price,
+  price_per_serving,
+  price_per_tier,
+  vegan_surcharge,
+  gluten_free_surcharge,
+  dairy_free_surcharge,
+  setup_fee,
+  flavor_premiums,
+  filling_premiums,
+  notes
+) VALUES (
+  50.00,
+  1.50,
+  30.00,
+  15.00,
+  15.00,
+  10.00,
+  25.00,
+  '{"Red Velvet": 5, "Caramel": 3}'::jsonb,
+  '{"Dark Chocolate Ganache": 8, "Salted Caramel": 10, "Raspberry Jam": 5}'::jsonb,
+  'Default pricing configuration'
+) ON CONFLICT DO NOTHING;
 
 -- Customers table
 CREATE TABLE IF NOT EXISTS customers (
@@ -166,6 +229,9 @@ $$ LANGUAGE plpgsql;
 CREATE TRIGGER update_products_updated_at BEFORE UPDATE ON products
   FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
+CREATE TRIGGER update_pricing_config_updated_at BEFORE UPDATE ON pricing_config
+  FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+
 CREATE TRIGGER update_customers_updated_at BEFORE UPDATE ON customers
   FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
@@ -174,6 +240,35 @@ CREATE TRIGGER update_orders_updated_at BEFORE UPDATE ON orders
 
 CREATE TRIGGER update_reviews_updated_at BEFORE UPDATE ON reviews
   FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+
+-- Migrate existing products to add basic template_data
+-- This can be run safely multiple times
+UPDATE products
+SET template_data = jsonb_build_object(
+  'occasion',
+  CASE category
+    WHEN 'birthday' THEN 'birthday'
+    WHEN 'wedding' THEN 'wedding'
+    WHEN 'corporate' THEN 'corporate'
+    ELSE 'other'
+  END,
+  'cakeType', 'round',
+  'servings', servings,
+  'tiers',
+  CASE
+    WHEN servings < 20 THEN 1
+    WHEN servings < 50 THEN 2
+    ELSE 3
+  END,
+  'flavors', flavors,
+  'filling', 'Buttercream',
+  'colorScheme', ARRAY['white']::text[],
+  'dietary', dietary,
+  'designDescription', description,
+  'specialRequests', '',
+  'setupRequired', false
+)
+WHERE template_data IS NULL;
 
 -- Insert sample products (matching our current mock data)
 INSERT INTO products (slug, name, description, base_price, images, category, servings, flavors, dietary, featured) VALUES
@@ -229,12 +324,17 @@ ON CONFLICT (slug) DO NOTHING;
 -- Row Level Security (RLS) Policies
 -- Enable RLS
 ALTER TABLE products ENABLE ROW LEVEL SECURITY;
+ALTER TABLE pricing_config ENABLE ROW LEVEL SECURITY;
 ALTER TABLE customers ENABLE ROW LEVEL SECURITY;
 ALTER TABLE orders ENABLE ROW LEVEL SECURITY;
 ALTER TABLE reviews ENABLE ROW LEVEL SECURITY;
 
 -- Public read access for products
 CREATE POLICY "Products are viewable by everyone" ON products
+  FOR SELECT USING (true);
+
+-- Pricing config is viewable by everyone (needed for frontend pricing calculations)
+CREATE POLICY "Pricing config is viewable by everyone" ON pricing_config
   FOR SELECT USING (true);
 
 -- Customers can only see their own data
@@ -251,3 +351,34 @@ CREATE POLICY "Anyone can insert orders" ON orders
 -- Reviews are public
 CREATE POLICY "Reviews are viewable by everyone" ON reviews
   FOR SELECT USING (true);
+
+-- Storage buckets and policies
+-- Note: Run these commands in Supabase Dashboard -> Storage
+
+-- 1. Create storage bucket named "cake-images" with public access
+-- 2. Set the following policies:
+
+-- Allow public to read images
+-- CREATE POLICY "Public can view cake images" ON storage.objects FOR SELECT
+--   USING (bucket_id = 'cake-images');
+
+-- Allow authenticated admins to upload images
+-- CREATE POLICY "Admins can upload cake images" ON storage.objects FOR INSERT
+--   WITH CHECK (
+--     bucket_id = 'cake-images' AND
+--     auth.uid() IN (SELECT auth.uid() FROM admin_users WHERE email = auth.email())
+--   );
+
+-- Allow authenticated admins to update images
+-- CREATE POLICY "Admins can update cake images" ON storage.objects FOR UPDATE
+--   USING (
+--     bucket_id = 'cake-images' AND
+--     auth.uid() IN (SELECT auth.uid() FROM admin_users WHERE email = auth.email())
+--   );
+
+-- Allow authenticated admins to delete images
+-- CREATE POLICY "Admins can delete cake images" ON storage.objects FOR DELETE
+--   USING (
+--     bucket_id = 'cake-images' AND
+--     auth.uid() IN (SELECT auth.uid() FROM admin_users WHERE email = auth.email())
+--   );

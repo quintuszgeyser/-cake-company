@@ -1,10 +1,18 @@
-import { Cake } from "@/types/cake";
+import { Cake, CakeTemplate } from "@/types/cake";
 import { OrderFormValues } from "@/lib/validations";
 
 /**
- * Maps a Cake object to partial OrderFormValues for pre-filling the custom order form
+ * Maps a Cake or CakeTemplate to partial OrderFormValues for pre-filling the custom order form
+ * If template_data exists (new templates), use it directly
+ * Otherwise, fall back to inferring from legacy Cake fields
  */
-export function cakeToFormTemplate(cake: Cake): Partial<OrderFormValues> {
+export function cakeToFormTemplate(cake: Cake | CakeTemplate): Partial<OrderFormValues> {
+  // If template has template_data, use it directly (new architecture)
+  if ("template_data" in cake && cake.template_data) {
+    return cake.template_data;
+  }
+
+  // Fallback for legacy cakes without template_data
   return {
     occasion: mapCategoryToOccasion(cake.category),
     cakeType: "round",

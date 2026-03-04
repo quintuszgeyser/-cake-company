@@ -1,14 +1,56 @@
 "use client";
 
+import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { CakeCard } from "./CakeCard";
 import { ArrowRight } from "lucide-react";
 import Link from "next/link";
-import { getFeaturedCakes } from "@/lib/data/cakes";
-
-const featuredCakes = getFeaturedCakes();
+import { CakeTemplate } from "@/types/cake";
+import { PricingConfig, calculateOrderPrice } from "@/lib/utils/pricing";
 
 export function FeaturedCakes() {
+  const [featuredCakes, setFeaturedCakes] = useState<CakeTemplate[]>([]);
+  const [pricingConfig, setPricingConfig] = useState<PricingConfig | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    Promise.all([
+      fetch("/api/products?featured=true").then((res) => res.json()),
+      fetch("/api/pricing").then((res) => res.json()),
+    ])
+      .then(([productsData, pricingData]) => {
+        if (productsData.success) {
+          setFeaturedCakes(productsData.products);
+        }
+        setPricingConfig(pricingData);
+      })
+      .catch((error) => {
+        console.error("Failed to fetch featured cakes:", error);
+      })
+      .finally(() => {
+        setLoading(false);
+      });
+  }, []);
+
+  if (loading) {
+    return (
+      <section
+        className="py-32"
+        style={{
+          backgroundColor: '#0A0A0A',
+          borderTop: '1px solid #2A2A2A'
+        }}
+      >
+        <div className="container text-center">
+          <p style={{ color: 'rgba(255, 248, 231, 0.5)' }}>Loading featured cakes...</p>
+        </div>
+      </section>
+    );
+  }
+
+  if (featuredCakes.length === 0) {
+    return null;
+  }
   return (
     <section
       className="py-32"
@@ -69,7 +111,11 @@ export function FeaturedCakes() {
                 id={featuredCakes[0].slug}
                 name={featuredCakes[0].name}
                 description={featuredCakes[0].description}
-                price={featuredCakes[0].price}
+                price={
+                  pricingConfig && featuredCakes[0].template_data
+                    ? calculateOrderPrice(featuredCakes[0].template_data, pricingConfig)
+                    : featuredCakes[0].base_price
+                }
                 image={featuredCakes[0].images[0]}
                 category={featuredCakes[0].category}
                 servings={featuredCakes[0].servings}
@@ -78,29 +124,35 @@ export function FeaturedCakes() {
           )}
 
           {/* Remaining cakes */}
-          {featuredCakes.slice(1).map((cake, index) => (
-            <motion.div
-              key={cake.id}
-              initial={{ opacity: 0, y: 40 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{
-                duration: 0.6,
-                delay: index * 0.15,
-                ease: [0.25, 0.1, 0.25, 1],
-              }}
-            >
-              <CakeCard
-                id={cake.slug}
-                name={cake.name}
-                description={cake.description}
-                price={cake.price}
-                image={cake.images[0]}
-                category={cake.category}
-                servings={cake.servings}
-              />
-            </motion.div>
-          ))}
+          {featuredCakes.slice(1).map((cake, index) => {
+            const displayPrice = pricingConfig && cake.template_data
+              ? calculateOrderPrice(cake.template_data, pricingConfig)
+              : cake.base_price;
+
+            return (
+              <motion.div
+                key={cake.id}
+                initial={{ opacity: 0, y: 40 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{
+                  duration: 0.6,
+                  delay: index * 0.15,
+                  ease: [0.25, 0.1, 0.25, 1],
+                }}
+              >
+                <CakeCard
+                  id={cake.slug}
+                  name={cake.name}
+                  description={cake.description}
+                  price={displayPrice}
+                  image={cake.images[0]}
+                  category={cake.category}
+                  servings={cake.servings}
+                />
+              </motion.div>
+            );
+          })}
         </div>
 
         {/* CTA - Minimal and elegant */}
