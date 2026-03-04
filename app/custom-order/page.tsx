@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, Suspense } from "react";
+import { useState, useEffect, Suspense } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -85,22 +85,34 @@ function CustomOrderForm() {
     handleSubmit,
     watch,
     setValue,
+    reset,
     formState: { errors },
   } = useForm<OrderFormValues>({
     resolver: zodResolver(orderFormSchema),
-    defaultValues: templateCake
-      ? cakeToFormTemplate(templateCake)
-      : {
-          tiers: 1,
-          servings: 12,
-          flavors: [],
-          colorScheme: [],
-          dietary: [],
-          setupRequired: false,
-        },
+    defaultValues: {
+      tiers: 1,
+      servings: 12,
+      flavors: [],
+      colorScheme: [],
+      dietary: [],
+      setupRequired: false,
+    },
   });
 
   const formValues = watch();
+
+  // Apply template when cakeId changes
+  useEffect(() => {
+    if (templateCake) {
+      const template = cakeToFormTemplate(templateCake);
+      // Set each field individually to ensure they're applied
+      Object.entries(template).forEach(([key, value]) => {
+        if (value !== undefined) {
+          setValue(key as keyof OrderFormValues, value as any);
+        }
+      });
+    }
+  }, [templateCake, setValue]);
 
   const calculatePrice = () => {
     let basePrice = 50;

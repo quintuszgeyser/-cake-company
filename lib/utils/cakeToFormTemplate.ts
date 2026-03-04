@@ -13,10 +13,45 @@ export function cakeToFormTemplate(cake: Cake): Partial<OrderFormValues> {
     flavors: extractFlavors(cake.flavors),
     filling: extractFilling(cake.flavors),
     designDescription: `Similar to ${cake.name} - ${cake.description}`,
-    colorScheme: [],
+    colorScheme: inferColorScheme(cake),
     dietary: cake.dietary || [],
     setupRequired: false,
   };
+}
+
+/**
+ * Infers appropriate color scheme based on cake details
+ */
+function inferColorScheme(cake: Cake): string[] {
+  // Map flavors/names to color suggestions
+  const colorMap: Record<string, string[]> = {
+    chocolate: ["white", "gold"],
+    vanilla: ["white", "pink"],
+    "red velvet": ["white", "red"],
+    lemon: ["white", "gold"],
+    strawberry: ["pink", "white"],
+    caramel: ["gold", "white"],
+    wedding: ["white", "gold"],
+    corporate: ["white", "blue"],
+  };
+
+  const cakeLower = cake.name.toLowerCase();
+  const categoryLower = cake.category.toLowerCase();
+
+  // Try to match based on name or flavors
+  for (const [key, colors] of Object.entries(colorMap)) {
+    if (cakeLower.includes(key) || cake.flavors.some(f => f.toLowerCase().includes(key))) {
+      return colors;
+    }
+  }
+
+  // Fallback based on category
+  if (colorMap[categoryLower]) {
+    return colorMap[categoryLower];
+  }
+
+  // Default fallback
+  return ["white"];
 }
 
 /**
