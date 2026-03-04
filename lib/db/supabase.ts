@@ -1,10 +1,18 @@
-import { createClient } from "@supabase/supabase-js";
+import { createClient as createSupabaseClient } from "@supabase/supabase-js";
 
 // Client-side Supabase client
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
 const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
 
-export const supabase = createClient(supabaseUrl, supabaseAnonKey);
+export const supabase = createSupabaseClient(supabaseUrl, supabaseAnonKey);
+
+/**
+ * Create a fresh Supabase client instance
+ * Use this in API routes for proper auth handling
+ */
+export function createClient() {
+  return createSupabaseClient(supabaseUrl, supabaseAnonKey);
+}
 
 // Database types
 export interface Database {
@@ -24,11 +32,47 @@ export interface Database {
           dietary: string[];
           featured: boolean;
           available: boolean;
+          template_data: any | null;
           created_at: string;
           updated_at: string;
         };
         Insert: Omit<Database["public"]["Tables"]["products"]["Row"], "id" | "created_at" | "updated_at">;
         Update: Partial<Database["public"]["Tables"]["products"]["Insert"]>;
+      };
+      pricing_config: {
+        Row: {
+          id: string;
+          base_price: number;
+          price_per_serving: number;
+          price_per_tier: number;
+          vegan_surcharge: number;
+          gluten_free_surcharge: number;
+          dairy_free_surcharge: number;
+          nut_free_surcharge: number;
+          sugar_free_surcharge: number;
+          setup_fee: number;
+          rush_delivery_fee: number;
+          flavor_premiums: any;
+          filling_premiums: any;
+          active: boolean;
+          notes: string | null;
+          updated_by: string | null;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: Omit<Database["public"]["Tables"]["pricing_config"]["Row"], "id" | "created_at" | "updated_at">;
+        Update: Partial<Database["public"]["Tables"]["pricing_config"]["Insert"]>;
+      };
+      admin_users: {
+        Row: {
+          id: string;
+          email: string;
+          name: string;
+          role: "admin" | "baker" | "delivery";
+          created_at: string;
+        };
+        Insert: Omit<Database["public"]["Tables"]["admin_users"]["Row"], "id" | "created_at">;
+        Update: Partial<Database["public"]["Tables"]["admin_users"]["Insert"]>;
       };
       customers: {
         Row: {
