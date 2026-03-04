@@ -72,7 +72,7 @@ export async function getAdminUser() {
   const user = await getUser();
   if (!user) return null;
 
-  const supabase = createClient();
+  const supabase = await createClient();
   const { data } = await supabase
     .from("admin_users")
     .select("*")
