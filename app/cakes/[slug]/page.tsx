@@ -123,7 +123,7 @@ export default function CakeDetailPage({
                 </h1>
                 <div className="flex items-baseline gap-2">
                   <span className="text-4xl font-bold text-primary">
-                    ${cake.price.toFixed(2)}
+                    R{cake.price.toFixed(2)}
                   </span>
                   <span className="text-muted-foreground">
                     / {cake.servings} servings

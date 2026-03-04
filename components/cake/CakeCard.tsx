@@ -63,7 +63,7 @@ export function CakeCard({
             <div className="flex items-center justify-between text-sm text-muted-foreground">
               <span>Serves {servings}</span>
               <span className="font-semibold text-lg text-foreground">
-                ${price.toFixed(2)}
+                R{price.toFixed(2)}
               </span>
             </div>
           </CardContent>

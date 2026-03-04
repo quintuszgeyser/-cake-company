@@ -129,13 +129,8 @@ export default function CustomOrderPage() {
         throw new Error(result.error || "Failed to submit order");
       }
 
-      // Success!
-      alert(
-        `Order submitted successfully!\n\nOrder Number: ${result.order.orderNumber}\nEstimated Price: $${result.order.estimatedPrice}\n\nWe'll contact you within 24 hours with a detailed quote.`
-      );
-
-      // Optionally redirect to order tracking page
-      // window.location.href = `/orders/${result.order.id}`;
+      // Success - redirect to payment
+      window.location.href = `/payment?orderId=${result.order.id}&amount=${result.order.estimatedPrice}&orderNumber=${result.order.orderNumber}`;
     } catch (error: any) {
       console.error("Order submission error:", error);
       alert(`Error submitting order: ${error.message}\n\nPlease try again or contact us directly.`);
@@ -307,7 +302,7 @@ export default function CustomOrderPage() {
                           <div>
                             <div className="text-sm text-muted-foreground">Estimated Price</div>
                             <div className="text-3xl font-bold text-primary">
-                              ${calculatePrice()}
+                              R{calculatePrice()}
                             </div>
                           </div>
                           <Sparkles className="w-8 h-8 text-primary" />
@@ -682,7 +677,7 @@ export default function CustomOrderPage() {
                           <div className="border-t pt-2 flex justify-between items-center">
                             <span className="font-semibold">Estimated Total:</span>
                             <span className="text-2xl font-bold text-primary">
-                              ${calculatePrice()}
+                              R{calculatePrice()}
                             </span>
                           </div>
                         </div>
